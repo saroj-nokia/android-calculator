@@ -354,7 +354,8 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
             AnimatedVisibility(
                 visible = showHistoryDialog,
                 enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
-                exit = shrinkVertically(animationSpec = tween(250)) + fadeOut()
+                exit = shrinkVertically(animationSpec = tween(250)) + fadeOut(),
+                modifier = Modifier.fillMaxSize()
             ) {
                 Box(
                     modifier = Modifier
