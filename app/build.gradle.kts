@@ -12,7 +12,7 @@ android {
 
   defaultConfig {
     applicationId = "com.aistudio.calculator.vjywzk"
-    minSdk = 24
+    minSdk = 35
     targetSdk = 36
     versionCode = 1
     versionName = "1.0"
