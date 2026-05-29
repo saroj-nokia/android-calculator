@@ -27,6 +27,19 @@ class MainActivity : ComponentActivity() {
   private val viewModel: CalculatorViewModel by viewModels()
 
   override fun onCreate(savedInstanceState: Bundle?) {
+    // Intercept all thread uncaught crashes and redirect them to visual error screen
+    Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+      android.util.Log.e("CRASH_LOGGER", "Unhandled crash on thread ${thread.name}", throwable)
+      try {
+        val intent = Intent(this, MainActivity::class.java).apply {
+          putExtra("crash_extra", "Thread: ${thread.name}\nException:\n${throwable.stackTraceToString()}")
+          addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        }
+        startActivity(intent)
+      } catch (e: Throwable) {}
+      Runtime.getRuntime().halt(1)
+    }
+
     super.onCreate(savedInstanceState)
     enableEdgeToEdge()
     
