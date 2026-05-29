@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -85,10 +86,13 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
             modifier = Modifier
                 .fillMaxSize()
                 .background(ObsidianDark)
-                .padding(innerPadding)
+                .padding(innerPadding),
+            contentAlignment = Alignment.BottomCenter
         ) {
             Column(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .widthIn(max = 480.dp),
                 verticalArrangement = Arrangement.Bottom
             ) {
                 // 1. Top Bar Options Toolbar
