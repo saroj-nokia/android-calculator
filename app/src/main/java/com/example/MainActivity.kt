@@ -30,6 +30,13 @@ class MainActivity : ComponentActivity() {
     super.onCreate(savedInstanceState)
     enableEdgeToEdge()
     
+    // Check if we came from a crash/exception redirect
+    val crashExtra = intent.getStringExtra("crash_extra")
+    if (crashExtra != null) {
+      renderErrorScreen("Startup Exception Context", crashExtra)
+      return
+    }
+
     try {
       setContent {
         MyApplicationTheme {

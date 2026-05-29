@@ -74,7 +74,6 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
     val history by viewModel.history.collectAsStateWithLifecycle()
 
     var showHistoryDialog by remember { mutableStateOf(false) }
-    val haptic = LocalHapticFeedback.current
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -107,11 +106,6 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                             .clip(RoundedCornerShape(12.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant)
                             .clickable {
-                                try {
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                } catch (t: Throwable) {
-                                    // Guard against platform haptic driver failures
-                                }
                                 showHistoryDialog = !showHistoryDialog
                             }
                             .padding(horizontal = 12.dp, vertical = 6.dp)
@@ -135,11 +129,6 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(MaterialTheme.colorScheme.surfaceVariant)
                                 .clickable {
-                                    try {
-                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    } catch (t: Throwable) {
-                                        // Guard against platform haptic driver failures
-                                    }
                                     viewModel.toggleDegrees()
                                 }
                                 .padding(horizontal = 12.dp, vertical = 6.dp)
@@ -162,11 +151,6 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(if (isAdvancedMode) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant)
                                 .clickable {
-                                    try {
-                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    } catch (t: Throwable) {
-                                        // Guard against platform haptic driver failures
-                                    }
                                     viewModel.toggleAdvancedMode()
                                 }
                                 .padding(horizontal = 12.dp, vertical = 6.dp)
@@ -395,11 +379,6 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                                         fontWeight = FontWeight.SemiBold,
                                         modifier = Modifier
                                             .clickable {
-                                                try {
-                                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                } catch (t: Throwable) {
-                                                    // Guard against platform haptic driver failures
-                                                }
                                                 viewModel.clearHistory()
                                             }
                                             .padding(4.dp)
@@ -447,11 +426,6 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                                     .clip(RoundedCornerShape(14.dp))
                                     .background(MaterialTheme.colorScheme.secondaryContainer)
                                     .clickable {
-                                        try {
-                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                        } catch (t: Throwable) {
-                                            // Guard against platform haptic driver failures
-                                        }
                                         showHistoryDialog = false
                                     }
                                     .padding(vertical = 14.dp),
@@ -481,8 +455,6 @@ fun CalculatorKeyButton(
     isSci: Boolean = false,
     onClick: () -> Unit
 ) {
-    val haptic = LocalHapticFeedback.current
-    
     val isSystemAction = label == "AC" || label == "DEL" || label == "%" || label == "(" || label == ")"
     val isOperator = label == "÷" || label == "×" || label == "−" || label == "+"
     val isEqual = label == "="
@@ -516,11 +488,6 @@ fun CalculatorKeyButton(
             .background(buttonBk)
             .then(borderModifier)
             .clickable {
-                try {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                } catch (t: Throwable) {
-                    // Guard against platform haptic driver failures
-                }
                 onClick()
             }
             .testTag(tag),
