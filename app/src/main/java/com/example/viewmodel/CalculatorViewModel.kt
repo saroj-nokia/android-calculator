@@ -135,7 +135,7 @@ class CalculatorViewModel(context: Context) : ViewModel() {
             } else {
                 _calculationResult.value = ""
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             // Live evaluation shouldn't pollute screen with error during typing
             _calculationResult.value = ""
         }
@@ -167,7 +167,7 @@ class CalculatorViewModel(context: Context) : ViewModel() {
             // Reset current input to output for rolling calculation
             _formula.value = formatted
             _calculationResult.value = ""
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             _calculationResult.value = "Error"
         }
     }
@@ -237,7 +237,7 @@ class CalculatorViewModel(context: Context) : ViewModel() {
                     "${it.id}|||${it.formula}|||${it.result}|||${it.timestamp}"
                 }
                 sharedPrefs.edit().putString("calc_history", serialized).apply()
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 Log.e("CalculatorVM", "Failed to save history", e)
             }
         }
@@ -261,7 +261,7 @@ class CalculatorViewModel(context: Context) : ViewModel() {
                 }
                 _history.value = list
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             Log.e("CalculatorVM", "Failed to load history", e)
         }
     }
