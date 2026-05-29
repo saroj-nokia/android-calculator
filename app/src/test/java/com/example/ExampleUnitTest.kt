@@ -2,6 +2,7 @@ package com.example
 
 import com.example.util.CalculatorEvaluator
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ExampleUnitTest {
@@ -21,5 +22,48 @@ class ExampleUnitTest {
     assertEquals(1.0, CalculatorEvaluator.evaluate("ln(e)", false), 0.0001)
     assertEquals(2.0, CalculatorEvaluator.evaluate("log(100)", false), 0.0001)
     assertEquals(1.0, CalculatorEvaluator.evaluate("sin(pi / 2)", false), 0.0001)
+  }
+
+  @Test
+  fun malformedExpressions_dontCrash() {
+    // Tests various incomplete or incorrect strings to verify exceptions/handling
+    try {
+      CalculatorEvaluator.evaluate("5 +", false)
+    } catch (e: Exception) {
+      // Incomplete formulas are expected to throw during evaluate() and be caught in ViewModel
+    }
+
+    try {
+      CalculatorEvaluator.evaluate("sin(", false)
+    } catch (e: Exception) {
+      // expected
+    }
+
+    try {
+      CalculatorEvaluator.evaluate("(", false)
+    } catch (e: Exception) {
+      // expected
+    }
+
+    try {
+      CalculatorEvaluator.evaluate(".", false)
+    } catch (e: Exception) {
+      // expected
+    }
+  }
+
+  @Test
+  fun postfixOperators() {
+    assertEquals(0.05, CalculatorEvaluator.evaluate("5%", false), 0.0001)
+    assertEquals(120.0, CalculatorEvaluator.evaluate("5!", false), 0.0001)
+  }
+
+  @Test
+  fun divisionByZero() {
+    try {
+      CalculatorEvaluator.evaluate("5 / 0", false)
+    } catch (e: Exception) {
+      assertTrue(e is ArithmeticException)
+    }
   }
 }

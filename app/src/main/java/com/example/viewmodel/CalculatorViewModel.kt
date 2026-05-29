@@ -247,11 +247,12 @@ class CalculatorViewModel(context: Context) : ViewModel() {
         try {
             val serialized = sharedPrefs.getString("calc_history", "") ?: ""
             if (serialized.isNotEmpty()) {
+                var fallbackId = System.nanoTime()
                 val list = serialized.split("\n\n").mapNotNull { block ->
                     val parts = block.split("|||")
                     if (parts.size >= 3) {
                         HistoryItem(
-                            id = parts[0].toLongOrNull() ?: System.nanoTime(),
+                            id = parts[0].toLongOrNull() ?: (fallbackId++),
                             formula = parts[1],
                             result = parts[2],
                             timestamp = if (parts.size >= 4) parts[3].toLongOrNull() ?: System.currentTimeMillis() else System.currentTimeMillis()

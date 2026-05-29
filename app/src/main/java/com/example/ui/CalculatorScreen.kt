@@ -104,7 +104,11 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                             .clip(RoundedCornerShape(12.dp))
                             .background(SurfaceSlate)
                             .clickable {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                try {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                } catch (t: Throwable) {
+                                    // Guard against platform haptic driver failures
+                                }
                                 showHistoryDialog = !showHistoryDialog
                             }
                             .padding(horizontal = 12.dp, vertical = 6.dp)
@@ -128,7 +132,11 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(SurfaceSlate)
                                 .clickable {
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    try {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    } catch (t: Throwable) {
+                                        // Guard against platform haptic driver failures
+                                    }
                                     viewModel.toggleDegrees()
                                 }
                                 .padding(horizontal = 12.dp, vertical = 6.dp)
@@ -151,7 +159,11 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(if (isAdvancedMode) AccentVividPurple.copy(alpha = 0.2f) else SurfaceSlate)
                                 .clickable {
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    try {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    } catch (t: Throwable) {
+                                        // Guard against platform haptic driver failures
+                                    }
                                     viewModel.toggleAdvancedMode()
                                 }
                                 .padding(horizontal = 12.dp, vertical = 6.dp)
@@ -378,7 +390,11 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                                         fontWeight = FontWeight.SemiBold,
                                         modifier = Modifier
                                             .clickable {
-                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                try {
+                                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                } catch (t: Throwable) {
+                                                    // Guard against platform haptic driver failures
+                                                }
                                                 viewModel.clearHistory()
                                             }
                                             .padding(4.dp)
@@ -408,7 +424,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                                     modifier = Modifier.weight(1f),
                                     verticalArrangement = Arrangement.spacedBy(16.dp)
                                 ) {
-                                    items(history, key = { it.id }) { item ->
+                                    items(history) { item ->
                                         HistoryRowItem(item = item, onSelect = {
                                             viewModel.loadHistoryItem(item)
                                             showHistoryDialog = false
@@ -426,7 +442,11 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                                     .clip(RoundedCornerShape(14.dp))
                                     .background(ButtonNumeric)
                                     .clickable {
-                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        try {
+                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        } catch (t: Throwable) {
+                                            // Guard against platform haptic driver failures
+                                        }
                                         showHistoryDialog = false
                                     }
                                     .padding(vertical = 14.dp),
@@ -483,7 +503,11 @@ fun CalculatorKeyButton(
             .background(buttonBk)
             .then(borderModifier)
             .clickable {
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                try {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                } catch (t: Throwable) {
+                    // Guard against platform haptic driver failures
+                }
                 onClick()
             }
             .testTag(tag),
