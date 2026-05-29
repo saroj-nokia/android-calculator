@@ -66,4 +66,13 @@ class ExampleUnitTest {
       assertTrue(e is ArithmeticException)
     }
   }
+
+  @Test
+  fun testImplicit() {
+    System.err.println("Running implicit test")
+    assertEquals(6.0, CalculatorEvaluator.evaluate("2(3)", false), 0.0001)
+    System.err.println("2(3) passed")
+    assertEquals(6.28318, CalculatorEvaluator.evaluate("2pi", false), 0.001)
+    System.err.println("2pi passed")
+  }
 }
