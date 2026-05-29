@@ -57,8 +57,12 @@ fun MyApplicationTheme(
 ) {
   val context = LocalContext.current
   val contrast = if (Build.VERSION.SDK_INT >= 34) {
-    val uiModeManager = context.getSystemService(Context.UI_MODE_SERVICE) as? UiModeManager
-    uiModeManager?.contrast ?: 0.0f
+    try {
+      val uiModeManager = context.getSystemService(Context.UI_MODE_SERVICE) as? UiModeManager
+      uiModeManager?.contrast ?: 0.0f
+    } catch (e: Throwable) {
+      0.0f
+    }
   } else {
     0.0f
   }
