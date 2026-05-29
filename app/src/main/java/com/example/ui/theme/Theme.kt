@@ -1,5 +1,7 @@
 package com.example.ui.theme
 
+import android.app.UiModeManager
+import android.content.Context
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -8,8 +10,12 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+
+val LocalAppContrast = staticCompositionLocalOf { 0.0f }
 
 private val DarkColorScheme =
   darkColorScheme(
@@ -49,10 +55,17 @@ fun MyApplicationTheme(
   dynamicColor: Boolean = true,
   content: @Composable () -> Unit,
 ) {
-  val colorScheme =
+  val context = LocalContext.current
+  val contrast = if (Build.VERSION.SDK_INT >= 34) {
+    val uiModeManager = context.getSystemService(Context.UI_MODE_SERVICE) as? UiModeManager
+    uiModeManager?.contrast ?: 0.0f
+  } else {
+    0.0f
+  }
+
+  var colorScheme =
     when {
       dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-        val context = LocalContext.current
         if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
       }
 
@@ -60,5 +73,30 @@ fun MyApplicationTheme(
       else -> LightColorScheme
     }
 
-  MaterialTheme(colorScheme = colorScheme, typography = Typography, content = content)
+  // Adjust Scheme dynamically for High/Medium Contrast selected by user on Android 15/16 devices
+  if (contrast > 0.01f) {
+    colorScheme = if (darkTheme) {
+      colorScheme.copy(
+        background = Color.Black,
+        surface = Color(0xFF16151A),
+        onBackground = Color.White,
+        onSurface = Color.White,
+        primary = Color(0xFFEADDFF),
+        onPrimary = Color.Black
+      )
+    } else {
+      colorScheme.copy(
+        background = Color.White,
+        surface = Color(0xFFF3F3F5),
+        onBackground = Color.Black,
+        onSurface = Color.Black,
+        primary = Color(0xFF6750A4),
+        onPrimary = Color.White
+      )
+    }
+  }
+
+  CompositionLocalProvider(LocalAppContrast provides contrast) {
+    MaterialTheme(colorScheme = colorScheme, typography = Typography, content = content)
+  }
 }

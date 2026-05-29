@@ -9,6 +9,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -492,10 +493,18 @@ fun CalculatorKeyButton(
         else -> ButtonNumeric to TextPrimary
     }
 
-    val borderModifier = if (isSci) {
-        Modifier.border(1.dp, TextMuted, RoundedCornerShape(28.dp))
-    } else {
-        Modifier
+    val contrast = LocalAppContrast.current
+    val borderModifier = when {
+        contrast > 0.01f -> {
+            val borderColor = if (isSystemInDarkTheme()) Color.White else Color.Black
+            Modifier.border((1.5f + contrast * 1.5f).dp, borderColor, RoundedCornerShape(28.dp))
+        }
+        isSci -> {
+            Modifier.border(1.dp, TextMuted, RoundedCornerShape(28.dp))
+        }
+        else -> {
+            Modifier
+        }
     }
 
     Box(
