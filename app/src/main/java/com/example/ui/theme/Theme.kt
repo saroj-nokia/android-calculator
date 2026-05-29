@@ -74,24 +74,7 @@ fun MyApplicationTheme(
   content: @Composable () -> Unit,
 ) {
   val context = LocalContext.current
-  val contrast = if (Build.VERSION.SDK_INT >= 34) {
-    remember(context) {
-      try {
-        val uiModeManager = context.getSystemService(Context.UI_MODE_SERVICE)
-        if (uiModeManager != null) {
-          val method = uiModeManager.javaClass.getMethod("getContrast")
-          val result = method.invoke(uiModeManager)
-          if (result is Float) result else 0.0f
-        } else {
-          0.0f
-        }
-      } catch (e: Throwable) {
-        0.0f
-      }
-    }
-  } else {
-    0.0f
-  }
+  val contrast = 0.0f
 
   var colorScheme =
     when {

@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -23,18 +24,11 @@ import com.example.ui.theme.MyApplicationTheme
 import com.example.viewmodel.CalculatorViewModel
 
 class MainActivity : ComponentActivity() {
-
-  private val viewModel: CalculatorViewModel by viewModels {
-    object : ViewModelProvider.Factory {
-      @Suppress("UNCHECKED_CAST")
-      override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return CalculatorViewModel(applicationContext) as T
-      }
-    }
-  }
+  private val viewModel: CalculatorViewModel by viewModels()
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+    enableEdgeToEdge()
     
     try {
       setContent {

@@ -1,9 +1,10 @@
 package com.example.viewmodel
 
+import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.util.CalculatorEvaluator
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,8 +20,8 @@ data class HistoryItem(
     val timestamp: Long = System.currentTimeMillis()
 )
 
-class CalculatorViewModel(context: Context) : ViewModel() {
-    private val sharedPrefs: SharedPreferences = context.getSharedPreferences("calculator_prefs", Context.MODE_PRIVATE)
+class CalculatorViewModel(application: Application) : AndroidViewModel(application) {
+    private val sharedPrefs: SharedPreferences = application.getSharedPreferences("calculator_prefs", Context.MODE_PRIVATE)
 
     private val _formula = MutableStateFlow("")
     val formula: StateFlow<String> = _formula
@@ -38,7 +39,9 @@ class CalculatorViewModel(context: Context) : ViewModel() {
     val history: StateFlow<List<HistoryItem>> = _history
 
     init {
-        loadHistory()
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            loadHistory()
+        }
     }
 
     fun toggleDegrees() {
