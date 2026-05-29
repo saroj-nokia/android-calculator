@@ -23,7 +23,7 @@ class ExampleRobolectricTest {
     @Before
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
-        viewModel = CalculatorViewModel(context)
+        viewModel = CalculatorViewModel(ApplicationProvider.getApplicationContext())
         viewModel.onKeyPress("AC")
         viewModel.clearHistory()
     }

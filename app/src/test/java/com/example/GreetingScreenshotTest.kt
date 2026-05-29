@@ -26,7 +26,7 @@ class GreetingScreenshotTest {
   @Test
   fun greeting_screenshot() {
     val context = ApplicationProvider.getApplicationContext<Context>()
-    val viewModel = CalculatorViewModel(context)
+    val viewModel = CalculatorViewModel(ApplicationProvider.getApplicationContext())
 
     composeTestRule.setContent {
       MyApplicationTheme {
