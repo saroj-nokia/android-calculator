@@ -76,11 +76,8 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
 
     var showHistoryDialog by remember { mutableStateOf(false) }
 
-    BackHandler(enabled = true) {
-        if (showHistoryDialog) {
-            showHistoryDialog = false
-        }
-        // Do not let the app exit to prevent InputDispatcher channel disposed error in test environment
+    BackHandler(enabled = showHistoryDialog) {
+        showHistoryDialog = false
     }
 
     Scaffold(
