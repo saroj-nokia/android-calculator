@@ -5,7 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -24,44 +24,19 @@ import com.example.viewmodel.CalculatorViewModel
 
 class MainActivity : ComponentActivity() {
 
-  private lateinit var viewModel: CalculatorViewModel
+  private val viewModel: CalculatorViewModel by viewModels {
+    object : ViewModelProvider.Factory {
+      @Suppress("UNCHECKED_CAST")
+      override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        return CalculatorViewModel(applicationContext) as T
+      }
+    }
+  }
 
   override fun onCreate(savedInstanceState: Bundle?) {
-    // 1. Intercept all thread uncaught crashes and redirect them to visual error screen
-    Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
-      android.util.Log.e("CRASH_LOGGER", "Unhandled crash on thread ${thread.name}", throwable)
-      try {
-        val intent = Intent(this, MainActivity::class.java).apply {
-          putExtra("crash_extra", "Thread: ${thread.name}\nException:\n${throwable.stackTraceToString()}")
-          addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-        }
-        startActivity(intent)
-      } catch (e: Throwable) {
-        // Fallback to safe log print
-      }
-      Runtime.getRuntime().halt(1)
-    }
-
     super.onCreate(savedInstanceState)
-
-    // Check if we came from a crash/exception redirect
-    val crashExtra = intent.getStringExtra("crash_extra")
-    if (crashExtra != null) {
-      renderErrorScreen("Startup Exception Context", crashExtra)
-      return
-    }
-
+    
     try {
-      enableEdgeToEdge()
-
-      // Initialize the viewmodel inside the try-catch block
-      viewModel = ViewModelProvider(this, object : ViewModelProvider.Factory {
-        @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-          return CalculatorViewModel(applicationContext) as T
-        }
-      })[CalculatorViewModel::class.java]
-
       setContent {
         MyApplicationTheme {
           CalculatorScreen(viewModel)
