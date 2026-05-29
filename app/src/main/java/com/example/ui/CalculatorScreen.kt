@@ -249,8 +249,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp))
                         .background(SurfaceSlate)
-                        .padding(horizontal = 24.dp, vertical = 24.dp)
-                        .navigationBarsPadding(),
+                        .padding(horizontal = 24.dp, vertical = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     // Scientific Operations Drawer Panel (with beautiful reveal animation)
