@@ -40,11 +40,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -65,11 +65,11 @@ import com.example.viewmodel.HistoryItem
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CalculatorScreen(viewModel: CalculatorViewModel) {
-    val formula by viewModel.formula.collectAsState()
-    val isDegrees by viewModel.isDegrees.collectAsState()
-    val isAdvancedMode by viewModel.isAdvancedMode.collectAsState()
-    val calculationResult by viewModel.calculationResult.collectAsState()
-    val history by viewModel.history.collectAsState()
+    val formula by viewModel.formula.collectAsStateWithLifecycle()
+    val isDegrees by viewModel.isDegrees.collectAsStateWithLifecycle()
+    val isAdvancedMode by viewModel.isAdvancedMode.collectAsStateWithLifecycle()
+    val calculationResult by viewModel.calculationResult.collectAsStateWithLifecycle()
+    val history by viewModel.history.collectAsStateWithLifecycle()
 
     var showHistoryDialog by remember { mutableStateOf(false) }
     val haptic = LocalHapticFeedback.current
@@ -190,11 +190,13 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                     horizontalAlignment = Alignment.End
                 ) {
                     // Dynamically adjusts size based on standard equation length to maintain pure readability
-                    val textLength = formula.length
-                    val fontSize = when {
-                        textLength > 24 -> 24.sp
-                        textLength > 16 -> 32.sp
-                        else -> 46.sp
+                    val fontSize = remember(formula) {
+                        val textLength = formula.length
+                        when {
+                            textLength > 24 -> 24.sp
+                            textLength > 16 -> 32.sp
+                            else -> 46.sp
+                        }
                     }
 
                     Text(
