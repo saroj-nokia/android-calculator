@@ -77,15 +77,13 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
     val haptic = LocalHapticFeedback.current
 
     Scaffold(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(ObsidianDark),
+        modifier = Modifier.fillMaxSize(),
+        containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets.safeDrawing
     ) { innerPadding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(ObsidianDark)
                 .padding(innerPadding),
             contentAlignment = Alignment.BottomCenter
         ) {
@@ -107,7 +105,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                     Row(
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
-                            .background(SurfaceSlate)
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
                             .clickable {
                                 try {
                                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -122,7 +120,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                     ) {
                         Text(
                             text = "🕒 History",
-                            color = AccentOrange,
+                            color = MaterialTheme.colorScheme.primary,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -135,7 +133,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(SurfaceSlate)
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
                                 .clickable {
                                     try {
                                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -150,7 +148,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                         ) {
                             Text(
                                 text = if (isDegrees) "DEG" else "RAD",
-                                color = AccentTeal,
+                                color = MaterialTheme.colorScheme.primary,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -162,7 +160,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(if (isAdvancedMode) AccentVividPurple.copy(alpha = 0.2f) else SurfaceSlate)
+                                .background(if (isAdvancedMode) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant)
                                 .clickable {
                                     try {
                                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -177,7 +175,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                         ) {
                             Text(
                                 text = "SCIENTIFIC",
-                                color = if (isAdvancedMode) AccentVividPurple else TextSecondary,
+                                color = if (isAdvancedMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -206,7 +204,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
 
                     Text(
                         text = formula.ifEmpty { "0" },
-                        color = TextPrimary,
+                        color = MaterialTheme.colorScheme.onBackground,
                         fontSize = fontSize,
                         fontWeight = FontWeight.Light,
                         textAlign = TextAlign.End,
@@ -223,7 +221,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                     if (calculationResult.isNotEmpty()) {
                         Text(
                             text = calculationResult,
-                            color = TextSecondary,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f),
                             fontSize = 26.sp,
                             fontWeight = FontWeight.Medium,
                             textAlign = TextAlign.End,
@@ -238,7 +236,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                 }
 
                 HorizontalDivider(
-                    color = SurfaceSlate,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
                     thickness = 1.dp,
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
@@ -248,7 +246,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp))
-                        .background(SurfaceSlate)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
                         .padding(horizontal = 24.dp, vertical = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
@@ -369,7 +367,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                             .fillMaxHeight(0.65f)
                             .align(Alignment.TopCenter)
                             .clickable(enabled = false) {}, // do not trigger closing when clicking inside
-                        colors = CardDefaults.cardColors(containerColor = SurfaceSlate),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                         shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
                     ) {
                         Column(
@@ -384,7 +382,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                             ) {
                                 Text(
                                     text = "Calculation History",
-                                    color = TextPrimary,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -392,7 +390,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                                 if (history.isNotEmpty()) {
                                     Text(
                                         text = "Clear All",
-                                        color = AccentOrange,
+                                        color = MaterialTheme.colorScheme.primary,
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.SemiBold,
                                         modifier = Modifier
@@ -421,7 +419,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                                 ) {
                                     Text(
                                         text = "No calculations found yet.",
-                                        color = TextMuted,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                                         fontSize = 15.sp,
                                         textAlign = TextAlign.Center
                                     )
@@ -447,7 +445,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(14.dp))
-                                    .background(ButtonNumeric)
+                                    .background(MaterialTheme.colorScheme.secondaryContainer)
                                     .clickable {
                                         try {
                                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -461,7 +459,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                             ) {
                                 Text(
                                     text = "Close History",
-                                    color = TextPrimary,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -490,11 +488,11 @@ fun CalculatorKeyButton(
     val isEqual = label == "="
 
     val (buttonBk, labelColor) = when {
-        isSci -> ButtonScientific to AccentVividPurple
-        isSystemAction -> ButtonAction to ActionText
-        isOperator -> AccentOrange to ButtonActionText
-        isEqual -> AccentTeal to ButtonEqualsText
-        else -> ButtonNumeric to TextPrimary
+        isSci -> MaterialTheme.colorScheme.surface to MaterialTheme.colorScheme.primary
+        isSystemAction -> MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
+        isOperator -> MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.onPrimary
+        isEqual -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
+        else -> MaterialTheme.colorScheme.secondary to MaterialTheme.colorScheme.onSecondary
     }
 
     val contrast = LocalAppContrast.current
@@ -504,7 +502,7 @@ fun CalculatorKeyButton(
             Modifier.border((1.5f + contrast * 1.5f).dp, borderColor, RoundedCornerShape(28.dp))
         }
         isSci -> {
-            Modifier.border(1.dp, TextMuted, RoundedCornerShape(28.dp))
+            Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(28.dp))
         }
         else -> {
             Modifier
@@ -549,14 +547,14 @@ fun HistoryRowItem(item: HistoryItem, onSelect: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(ButtonNumeric.copy(alpha = 0.4f))
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
             .clickable { onSelect() }
             .padding(16.dp),
         horizontalAlignment = Alignment.End
     ) {
         Text(
             text = item.formula,
-            color = TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 15.sp,
             textAlign = TextAlign.End,
             maxLines = 2,
@@ -565,7 +563,7 @@ fun HistoryRowItem(item: HistoryItem, onSelect: () -> Unit) {
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = "= " + item.result,
-            color = AccentTeal,
+            color = MaterialTheme.colorScheme.primary,
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
