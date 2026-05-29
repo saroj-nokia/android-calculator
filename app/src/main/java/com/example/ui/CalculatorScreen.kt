@@ -1,5 +1,6 @@
 package com.example.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -74,6 +75,13 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
     val history by viewModel.history.collectAsStateWithLifecycle()
 
     var showHistoryDialog by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = true) {
+        if (showHistoryDialog) {
+            showHistoryDialog = false
+        }
+        // Do not let the app exit to prevent InputDispatcher channel disposed error in test environment
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
