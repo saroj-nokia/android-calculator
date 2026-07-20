@@ -37,6 +37,11 @@ class MainActivity : ComponentActivity() {
         }
         startActivity(intent)
       } catch (e: Throwable) {}
+      
+      try {
+        Thread.sleep(500)
+      } catch (e: InterruptedException) {}
+      
       Runtime.getRuntime().halt(1)
     }
 

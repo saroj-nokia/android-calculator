@@ -59,6 +59,29 @@ class ExampleUnitTest {
   }
 
   @Test
+  fun percentSemantics() {
+    // Standard calculator percent behavior for addition/subtraction
+    assertEquals(110.0, CalculatorEvaluator.evaluate("100 + 10%", false), 0.0001)
+    assertEquals(90.0, CalculatorEvaluator.evaluate("100 - 10%", false), 0.0001)
+    // Standalone % or multiplication behavior
+    assertEquals(5.0, CalculatorEvaluator.evaluate("100 * 5%", false), 0.0001)
+  }
+
+  @Test
+  fun operatorPrecedence() {
+    // Unary minus binds looser than exponentiation in standard mathematical convention
+    assertEquals(-4.0, CalculatorEvaluator.evaluate("-2^2", false), 0.0001)
+    assertEquals(4.0, CalculatorEvaluator.evaluate("(-2)^2", false), 0.0001)
+  }
+
+  @Test
+  fun rollingCalculation() {
+    // Tests that large numbers can be parsed from their raw format (E notation) 
+    // when continuing a calculation
+    assertEquals(500000000001.0, CalculatorEvaluator.evaluate("5E11 + 1", false), 0.1)
+  }
+
+  @Test
   fun divisionByZero() {
     try {
       CalculatorEvaluator.evaluate("5 / 0", false)

@@ -82,17 +82,20 @@ object CalculatorEvaluator {
         fun parse(): Double {
             if (tokens.isEmpty()) return 0.0
             val res = parseExpression()
+            if (idx < tokens.size) {
+                throw IllegalArgumentException("Unexpected token: ${tokens[idx]}")
+            }
             return res
         }
 
         // Expression = Term (('+' | '-') Term)*
         private fun parseExpression(): Double {
-            var val1 = parseTerm()
+            var val1 = parseTerm(null)
             while (true) {
                 val p = peek()
                 if (p == "+" || p == "-") {
                     val op = consume()
-                    val val2 = parseTerm()
+                    val val2 = parseTerm(val1)
                     if (op == "+") {
                         val1 += val2
                     } else {
@@ -105,14 +108,30 @@ object CalculatorEvaluator {
             return val1
         }
 
-        // Term = Factor (('*' | '/') Factor)*
-        private fun parseTerm(): Double {
-            var val1 = parseFactor()
+        // Term = Unary (('*' | '/') Unary)*
+        private fun parseTerm(addBase: Double?): Double {
+            var val1 = parseUnary()
+            var p = peek()
+            while (p == "%") {
+                consume()
+                if (addBase != null) {
+                    val1 = addBase * (val1 / 100.0)
+                } else {
+                    val1 /= 100.0
+                }
+                p = peek()
+            }
             while (true) {
-                val p = peek()
+                p = peek()
                 if (p == "*" || p == "/") {
                     val op = consume()
-                    val val2 = parseFactor()
+                    var val2 = parseUnary()
+                    var p2 = peek()
+                    while (p2 == "%") {
+                        consume()
+                        val2 /= 100.0
+                        p2 = peek()
+                    }
                     if (op == "*") {
                         val1 *= val2
                     } else {
@@ -122,7 +141,13 @@ object CalculatorEvaluator {
                 } else {
                     // Implicit multiplication, e.g., 2pi, 2(3+5), 3ln(e), (4)(5)
                     if (p != null && (p == "(" || p == "pi" || p == "e" || isFunction(p) || p.toDoubleOrNull() != null)) {
-                        val val2 = parseFactor()
+                        var val2 = parseUnary()
+                        var p2 = peek()
+                        while (p2 == "%") {
+                            consume()
+                            val2 /= 100.0
+                            p2 = peek()
+                        }
                         val1 *= val2
                     } else {
                         break
@@ -132,20 +157,30 @@ object CalculatorEvaluator {
             return val1
         }
 
+        private fun parseUnary(): Double {
+            val p = peek() ?: throw IllegalArgumentException("Unexpected end of formula")
+            if (p == "-") {
+                consume()
+                return -parseUnary()
+            }
+            if (p == "+") {
+                consume()
+                return parseUnary()
+            }
+            return parseFactor()
+        }
+
         private fun isFunction(name: String): Boolean {
             return name == "sin" || name == "cos" || name == "tan" || name == "asin" || name == "acos" || name == "atan" || name == "ln" || name == "log" || name == "sqrt"
         }
 
-        // Factor = Base ('^' Base)*
+        // Factor = Base ('!')* ('^' Unary)*
         private fun parseFactor(): Double {
             var val1 = parseBase()
-            // Postfix operators like % or !
+            // Postfix operators like !
             while (true) {
                 val p = peek()
-                if (p == "%") {
-                    consume()
-                    val1 /= 100.0
-                } else if (p == "!") {
+                if (p == "!") {
                     consume()
                     val1 = factorial(val1)
                 } else {
@@ -154,30 +189,23 @@ object CalculatorEvaluator {
             }
             if (peek() == "^") {
                 consume()
-                val val2 = parseFactor()
+                val val2 = parseUnary()
                 val1 = val1.pow(val2)
             }
             return val1
         }
 
-        // Base = Number | Constant | Function | '(' Expression ')' | '-' Base
+        // Base = Number | Constant | Function | '(' Expression ')'
         private fun parseBase(): Double {
             val p = peek() ?: throw IllegalArgumentException("Unexpected end of formula")
-
-            if (p == "-") {
-                consume()
-                return -parseBase()
-            }
-            if (p == "+") {
-                consume()
-                return parseBase()
-            }
 
             if (p == "(") {
                 consume()
                 val res = parseExpression()
                 if (peek() == ")") {
                     consume()
+                } else {
+                    throw IllegalArgumentException("Missing closing parenthesis")
                 }
                 return res
             }
@@ -197,10 +225,14 @@ object CalculatorEvaluator {
                 val arg = if (peek() == "(") {
                     consume()
                     val res = parseExpression()
-                    if (peek() == ")") consume()
+                    if (peek() == ")") {
+                        consume()
+                    } else {
+                        throw IllegalArgumentException("Missing closing parenthesis")
+                    }
                     res
                 } else {
-                    parseBase()
+                    parseUnary()
                 }
 
                 return when (func) {

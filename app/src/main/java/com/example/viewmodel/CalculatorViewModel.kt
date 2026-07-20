@@ -83,13 +83,13 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
                 evaluateAndSave()
             }
             "%" -> {
-                if (current.isNotEmpty() && !isOperator(current.last())) {
+                if (current.isNotEmpty() && !isOperator(current.last()) && current.last() != '%') {
                     _formula.value = "$current%"
                 }
                 triggerLiveEvaluation()
             }
             "x!" -> {
-                if (current.isNotEmpty() && !isOperator(current.last())) {
+                if (current.isNotEmpty() && !isOperator(current.last()) && current.last() != '!') {
                     _formula.value = "$current!"
                 }
                 triggerLiveEvaluation()
@@ -107,6 +107,8 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
                 triggerLiveEvaluation()
             }
             else -> {
+                // Note: The UI layer (CalculatorScreen.kt) sends unicode symbols (×, ÷, −) directly,
+                // so ASCII remap here is technically dead code, but kept defensively.
                 val formattedKey = when (key) {
                     "*" -> "×"
                     "/" -> "÷"
@@ -150,9 +152,10 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
 
         try {
             val result = CalculatorEvaluator.evaluate(expr, _isDegrees.value)
-            val formatted = formatResult(result)
+            val rawFormatted = formatRawResult(result)
+            val displayFormatted = formatResult(result)
 
-            if (formatted == "Error" || formatted == "Infinity") {
+            if (rawFormatted == "Error" || rawFormatted.endsWith("Infinity")) {
                 _calculationResult.value = "Error"
                 return
             }
@@ -161,14 +164,14 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
             val item = HistoryItem(
                 id = System.nanoTime(),
                 formula = expr,
-                result = formatted
+                result = displayFormatted
             )
             val updated = listOf(item) + _history.value
             _history.value = updated.take(50) // Keep last 50 items
             saveHistoryToPrefs()
 
             // Reset current input to output for rolling calculation
-            _formula.value = formatted
+            _formula.value = rawFormatted
             _calculationResult.value = ""
         } catch (e: Throwable) {
             _calculationResult.value = "Error"
@@ -185,9 +188,9 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
         _calculationResult.value = "= " + item.result
     }
 
-    private fun formatResult(value: Double): String {
+    private fun formatRawResult(value: Double): String {
         if (value.isNaN()) return "Error"
-        if (value.isInfinite()) return "Infinity"
+        if (value.isInfinite()) return if (value < 0.0) "-Infinity" else "Infinity"
 
         // Round tiny numbers close to zero (often precision errors with sine/cosine)
         var roundedValue = value
@@ -197,7 +200,7 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
 
         if (roundedValue == roundedValue.toLong().toDouble()) {
             val longVal = roundedValue.toLong()
-            if (abs(longVal) < 1_000_000_000_000L) {
+            if (abs(longVal) < 100_000_000_000L) {
                 return longVal.toString()
             }
         }
@@ -205,12 +208,18 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
         val absValue = abs(roundedValue)
         if (absValue > 0 && (absValue >= 1e11 || absValue < 1e-6)) {
             val df = DecimalFormat("0.######E0")
-            val formatted = df.format(roundedValue)
-            return convertExponentToSuperscript(formatted)
+            return df.format(roundedValue)
         }
 
         val df = DecimalFormat("#.##########")
         return df.format(roundedValue)
+    }
+
+    private fun formatResult(value: Double): String {
+        val raw = formatRawResult(value)
+        if (raw == "Error" || raw.endsWith("Infinity")) return raw
+        if (raw.contains("E")) return convertExponentToSuperscript(raw)
+        return raw
     }
 
     private fun convertExponentToSuperscript(input: String): String {

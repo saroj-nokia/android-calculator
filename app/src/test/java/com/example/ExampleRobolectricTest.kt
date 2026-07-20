@@ -148,7 +148,11 @@ class ExampleRobolectricTest {
         viewModel.onKeyPress("4")
         // formula: 2×(3+4 - wait wait, closing bracket is omitted
         assertEquals("2×(3+4", viewModel.formula.value)
-        assertEquals("= 14", viewModel.calculationResult.value) // evaluator auto closes unmatched parentheses beautifully
+        assertEquals("", viewModel.calculationResult.value) // Should show empty during live typing due to strict parenthesis parsing
+        
+        // Evaluate (=)
+        viewModel.onKeyPress("=")
+        assertEquals("Error", viewModel.calculationResult.value) // Should show Error on evaluation due to strict parsing
     }
 
     @Test
