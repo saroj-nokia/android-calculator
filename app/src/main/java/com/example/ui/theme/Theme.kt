@@ -11,7 +11,11 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -74,7 +78,28 @@ fun MyApplicationTheme(
   content: @Composable () -> Unit,
 ) {
   val context = LocalContext.current
-  val contrast = 0.0f
+  var contrast by remember {
+    mutableFloatStateOf(
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+        context.getSystemService(UiModeManager::class.java)?.contrast ?: 0.0f
+      } else {
+        0.0f
+      }
+    )
+  }
+
+  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+    DisposableEffect(context) {
+      val uiModeManager = context.getSystemService(UiModeManager::class.java)
+      val listener = UiModeManager.ContrastChangeListener { newContrast ->
+        contrast = newContrast
+      }
+      uiModeManager?.addContrastChangeListener(context.mainExecutor, listener)
+      onDispose {
+        uiModeManager?.removeContrastChangeListener(listener)
+      }
+    }
+  }
 
   var colorScheme =
     when {
