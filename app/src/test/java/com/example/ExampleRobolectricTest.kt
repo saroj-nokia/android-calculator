@@ -12,6 +12,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowLooper
+import java.util.concurrent.TimeUnit
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
@@ -43,6 +45,7 @@ class ExampleRobolectricTest {
         viewModel.onKeyPress("*")
         viewModel.onKeyPress("2")
         
+        ShadowLooper.idleMainLooper(150, TimeUnit.MILLISECONDS)
         assertEquals("5+3×2", viewModel.formula.value)
         assertEquals("= 11", viewModel.calculationResult.value)
 
@@ -104,6 +107,7 @@ class ExampleRobolectricTest {
         viewModel.onKeyPress("2")
         viewModel.onKeyPress("^")
         viewModel.onKeyPress("3")
+        ShadowLooper.idleMainLooper(150, TimeUnit.MILLISECONDS)
         assertEquals("2^3", viewModel.formula.value)
         assertEquals("= 8", viewModel.calculationResult.value)
 
@@ -116,11 +120,13 @@ class ExampleRobolectricTest {
         // 5!
         viewModel.onKeyPress("5")
         viewModel.onKeyPress("x!")
+        ShadowLooper.idleMainLooper(150, TimeUnit.MILLISECONDS)
         assertEquals("5!", viewModel.formula.value)
         assertEquals("= 120", viewModel.calculationResult.value)
 
         // 5! % -> should be 1.2
         viewModel.onKeyPress("%")
+        ShadowLooper.idleMainLooper(150, TimeUnit.MILLISECONDS)
         assertEquals("5!%", viewModel.formula.value)
         assertEquals("= 1.2", viewModel.calculationResult.value)
     }

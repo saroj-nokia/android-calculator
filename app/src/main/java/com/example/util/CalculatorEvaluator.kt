@@ -3,10 +3,10 @@ package com.example.util
 import kotlin.math.*
 
 object CalculatorEvaluator {
-    fun evaluate(expression: String, isDegrees: Boolean): Double {
+    fun evaluate(expression: String, isDegrees: Boolean, xValue: Double? = null): Double {
         val sanitized = sanitize(expression)
         val tokens = tokenize(sanitized)
-        return Parser(tokens, isDegrees).parse()
+        return Parser(tokens, isDegrees, xValue).parse()
     }
 
     private fun sanitize(expr: String): String {
@@ -68,7 +68,7 @@ object CalculatorEvaluator {
         return result
     }
 
-    private class Parser(private val tokens: List<String>, private val isDegrees: Boolean) {
+    private class Parser(private val tokens: List<String>, private val isDegrees: Boolean, private val xValue: Double? = null) {
         private var idx = 0
 
         private fun peek(): String? {
@@ -140,7 +140,7 @@ object CalculatorEvaluator {
                     }
                 } else {
                     // Implicit multiplication, e.g., 2pi, 2(3+5), 3ln(e), (4)(5)
-                    if (p != null && (p == "(" || p == "pi" || p == "e" || isFunction(p) || p.toDoubleOrNull() != null)) {
+                    if (p != null && (p == "(" || p == "pi" || p == "e" || p == "x" || isFunction(p) || p.toDoubleOrNull() != null)) {
                         var val2 = parseUnary()
                         var p2 = peek()
                         while (p2 == "%") {
@@ -237,6 +237,11 @@ object CalculatorEvaluator {
             if (p == "e") {
                 consume()
                 return E
+            }
+
+            if (p == "x") {
+                consume()
+                return xValue ?: throw IllegalArgumentException("x is undefined")
             }
 
             if (isFunction(p)) {

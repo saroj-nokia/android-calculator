@@ -118,6 +118,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
     val isAdvancedMode by viewModel.isAdvancedMode.collectAsStateWithLifecycle()
     val calculationResult by viewModel.calculationResult.collectAsStateWithLifecycle()
     val history by viewModel.history.collectAsStateWithLifecycle()
+    val isFunctionMode by viewModel.isFunctionMode.collectAsStateWithLifecycle()
 
     var showHistoryDialog by remember { mutableStateOf(false) }
 
@@ -202,6 +203,27 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
 
                         Spacer(modifier = Modifier.width(10.dp))
 
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(if (isFunctionMode) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant)
+                                .clickable {
+                                    viewModel.toggleFunctionMode()
+                                }
+                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                                .testTag("function_mode_toggle"),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "f(x)",
+                                color = if (isFunctionMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(10.dp))
+
                         // Advanced Scientific Notation / Functions mode trigger
                         Box(
                             modifier = Modifier
@@ -233,56 +255,134 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                     verticalArrangement = Arrangement.Bottom,
                     horizontalAlignment = Alignment.End
                 ) {
-                    // Dynamically adjusts size based on standard equation length to maintain pure readability
-                    val fontSize = remember(formula) {
-                        val textLength = formula.length
-                        when {
-                            textLength > 24 -> 24.sp
-                            textLength > 16 -> 32.sp
-                            else -> 46.sp
+                    if (isFunctionMode) {
+                        val functionFormula by viewModel.functionFormula.collectAsStateWithLifecycle()
+                        val functionPoint by viewModel.functionPoint.collectAsStateWithLifecycle()
+                        val functionPointB by viewModel.functionPointB.collectAsStateWithLifecycle()
+                        val functionResult by viewModel.functionResult.collectAsStateWithLifecycle()
+                        val focusedField by viewModel.focusedField.collectAsStateWithLifecycle()
+
+                        val selectedColor = MaterialTheme.colorScheme.primary
+                        val unselectedColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+
+                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Text("f(x) =", fontSize = 24.sp, color = if (focusedField == 0) selectedColor else unselectedColor, modifier = Modifier.clickable { viewModel.setFocusedField(0) })
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = functionFormula.ifEmpty { "..." },
+                                color = if (focusedField == 0) selectedColor else unselectedColor,
+                                fontSize = 24.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.clickable { viewModel.setFocusedField(0) }.weight(1f),
+                                textAlign = TextAlign.End
+                            )
                         }
-                    }
-
-                    Text(
-                        text = formula.ifEmpty { "0" },
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontSize = fontSize,
-                        fontWeight = FontWeight.Light,
-                        textAlign = TextAlign.End,
-                        maxLines = 4,
-                        lineHeight = fontSize * 1.25,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("formula_display")
-                    )
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    if (calculationResult.isNotEmpty()) {
-                        val clipboardManager = LocalClipboardManager.current
-                        val context = LocalContext.current
+                        Spacer(Modifier.height(8.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Text("a =", fontSize = 24.sp, color = if (focusedField == 1) selectedColor else unselectedColor, modifier = Modifier.clickable { viewModel.setFocusedField(1) })
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = functionPoint.ifEmpty { "..." },
+                                color = if (focusedField == 1) selectedColor else unselectedColor,
+                                fontSize = 24.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.clickable { viewModel.setFocusedField(1) }.weight(1f),
+                                textAlign = TextAlign.End
+                            )
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Text("b =", fontSize = 24.sp, color = if (focusedField == 2) selectedColor else unselectedColor, modifier = Modifier.clickable { viewModel.setFocusedField(2) })
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = functionPointB.ifEmpty { "..." },
+                                color = if (focusedField == 2) selectedColor else unselectedColor,
+                                fontSize = 24.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.clickable { viewModel.setFocusedField(2) }.weight(1f),
+                                textAlign = TextAlign.End
+                            )
+                        }
                         
+                        Spacer(Modifier.height(16.dp))
+                        if (functionResult.isNotEmpty()) {
+                            val clipboardManager = LocalClipboardManager.current
+                            val context = LocalContext.current
+                            Text(
+                                text = functionResult,
+                                color = MaterialTheme.colorScheme.onBackground,
+                                fontSize = 26.sp,
+                                fontWeight = FontWeight.Medium,
+                                textAlign = TextAlign.End,
+                                maxLines = 2,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .combinedClickable(
+                                        onClick = {},
+                                        onLongClick = {
+                                            clipboardManager.setText(AnnotatedString(functionResult))
+                                            Toast.makeText(context, "Result copied", Toast.LENGTH_SHORT).show()
+                                        }
+                                    )
+                            )
+                        } else {
+                            Spacer(modifier = Modifier.height(32.dp))
+                        }
+                    } else {
+                        // Dynamically adjusts size based on standard equation length to maintain pure readability
+                        val fontSize = remember(formula) {
+                            val textLength = formula.length
+                            when {
+                                textLength > 24 -> 24.sp
+                                textLength > 16 -> 32.sp
+                                else -> 46.sp
+                            }
+                        }
+
                         Text(
-                            text = calculationResult,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f),
-                            fontSize = 26.sp,
-                            fontWeight = FontWeight.Medium,
+                            text = formula.ifEmpty { "0" },
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontSize = fontSize,
+                            fontWeight = FontWeight.Light,
                             textAlign = TextAlign.End,
-                            maxLines = 1,
+                            maxLines = 4,
+                            lineHeight = fontSize * 1.25,
+                            overflow = TextOverflow.Ellipsis,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .combinedClickable(
-                                    onClick = {},
-                                    onLongClick = {
-                                        clipboardManager.setText(AnnotatedString(calculationResult.removePrefix("= ")))
-                                        Toast.makeText(context, "Result copied", Toast.LENGTH_SHORT).show()
-                                    }
-                                )
-                                .testTag("result_display")
+                                .testTag("formula_display")
                         )
-                    } else {
-                        Spacer(modifier = Modifier.height(32.dp))
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        if (calculationResult.isNotEmpty()) {
+                            val clipboardManager = LocalClipboardManager.current
+                            val context = LocalContext.current
+                            
+                            Text(
+                                text = calculationResult,
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f),
+                                fontSize = 26.sp,
+                                fontWeight = FontWeight.Medium,
+                                textAlign = TextAlign.End,
+                                maxLines = 1,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .combinedClickable(
+                                        onClick = {},
+                                        onLongClick = {
+                                            clipboardManager.setText(AnnotatedString(calculationResult.removePrefix("= ")))
+                                            Toast.makeText(context, "Result copied", Toast.LENGTH_SHORT).show()
+                                        }
+                                    )
+                                    .testTag("result_display")
+                            )
+                        } else {
+                            Spacer(modifier = Modifier.height(32.dp))
+                        }
                     }
                 }
 
@@ -332,7 +432,8 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                                 
                                 CalculatorKeyButton("nPr", "key_npr", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("nPr") }
                                 CalculatorKeyButton("nCr", "key_ncr", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("nCr") }
-                                CalculatorKeyButton(undoLabel, "key_undo", modifier = Modifier.weight(2f).alpha(if (undoEnabled) 1f else 0.4f), isSci = true) { if (undoEnabled) viewModel.onUndo() }
+                                CalculatorKeyButton("x", "key_x_var", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("x") }
+                                CalculatorKeyButton(undoLabel, "key_undo", modifier = Modifier.weight(1f).alpha(if (undoEnabled) 1f else 0.4f), isSci = true) { if (undoEnabled) viewModel.onUndo() }
                             }
                             // Row 1 Advanced Functions
                             Row(
@@ -364,6 +465,22 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                                 CalculatorKeyButton("(", "key_open_paren", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("(") }
                                 CalculatorKeyButton(")", "key_close_paren", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress(")") }
                             }
+                        }
+                    }
+
+                    // Function Mode Action Buttons
+                    AnimatedVisibility(
+                        visible = isFunctionMode,
+                        enter = expandVertically(animationSpec = tween(250)) + fadeIn(),
+                        exit = shrinkVertically(animationSpec = tween(220)) + fadeOut()
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            CalculatorKeyButton("f(a)", "key_eval_f", modifier = Modifier.weight(1f), isSci = true) { viewModel.evaluateFunctionAtPoint() }
+                            CalculatorKeyButton("f'(a)", "key_eval_deriv", modifier = Modifier.weight(1f), isSci = true) { viewModel.evaluateDerivativeAtPoint() }
+                            CalculatorKeyButton("∫f(x)dx", "key_eval_int", modifier = Modifier.weight(1f), isSci = true) { viewModel.evaluateDefiniteIntegral() }
                         }
                     }
 

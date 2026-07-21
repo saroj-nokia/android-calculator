@@ -46,6 +46,24 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
     private val _previousFormula = MutableStateFlow<String?>(null)
     val previousFormula: StateFlow<String?> = _previousFormula
 
+    private val _isFunctionMode = MutableStateFlow(false)
+    val isFunctionMode: StateFlow<Boolean> = _isFunctionMode
+
+    private val _functionFormula = MutableStateFlow("")
+    val functionFormula: StateFlow<String> = _functionFormula
+
+    private val _functionPoint = MutableStateFlow("")
+    val functionPoint: StateFlow<String> = _functionPoint
+
+    private val _functionPointB = MutableStateFlow("")
+    val functionPointB: StateFlow<String> = _functionPointB
+
+    private val _functionResult = MutableStateFlow("")
+    val functionResult: StateFlow<String> = _functionResult
+
+    private val _focusedField = MutableStateFlow(0)
+    val focusedField: StateFlow<Int> = _focusedField
+
     private var liveEvalJob: Job? = null
 
     init {
@@ -64,6 +82,11 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun onKeyPress(key: String) {
+        if (_isFunctionMode.value) {
+            handleFunctionKeyPress(key)
+            return
+        }
+
         val current = _formula.value
 
         when (key) {
@@ -354,6 +377,112 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
             }
         } catch (e: Throwable) {
             Log.e("CalculatorVM", "Failed to load history", e)
+        }
+    }
+
+    fun toggleFunctionMode() {
+        _isFunctionMode.value = !_isFunctionMode.value
+    }
+
+    fun setFocusedField(field: Int) {
+        _focusedField.value = field
+    }
+
+    private fun handleFunctionKeyPress(key: String) {
+        val currentFlow = when (_focusedField.value) {
+            0 -> _functionFormula
+            1 -> _functionPoint
+            else -> _functionPointB
+        }
+        val current = currentFlow.value
+
+        when (key) {
+            "AC" -> {
+                currentFlow.value = ""
+                _functionResult.value = ""
+            }
+            "DEL" -> {
+                if (current.isNotEmpty()) {
+                    currentFlow.value = current.dropLast(1)
+                }
+                _functionResult.value = ""
+            }
+            "=" -> {
+                // Ignore in function mode for normal keys, actions are triggered by dedicated buttons
+            }
+            "sin", "cos", "tan", "ln", "log", "sqrt" -> {
+                currentFlow.value = "$current$key("
+                _functionResult.value = ""
+            }
+            else -> {
+                currentFlow.value = "$current$key"
+                _functionResult.value = ""
+            }
+        }
+    }
+
+    fun evaluateFunctionAtPoint() {
+        try {
+            val expr = _functionFormula.value
+            val pointExpr = _functionPoint.value
+            if (expr.isEmpty() || pointExpr.isEmpty()) return
+            val xVal = CalculatorEvaluator.evaluate(pointExpr, _isDegrees.value)
+            val result = CalculatorEvaluator.evaluate(expr, _isDegrees.value, xVal)
+            _functionResult.value = "f(" + formatResult(xVal) + ") = " + formatResult(result)
+        } catch (e: Exception) {
+            _functionResult.value = "Error"
+        }
+    }
+
+    fun evaluateDerivativeAtPoint() {
+        try {
+            val expr = _functionFormula.value
+            val pointExpr = _functionPoint.value
+            if (expr.isEmpty() || pointExpr.isEmpty()) return
+            val xVal = CalculatorEvaluator.evaluate(pointExpr, _isDegrees.value)
+            val h = 1e-5 // small enough for accuracy, large enough to avoid heavy floating point cancellation
+            val fPlus = CalculatorEvaluator.evaluate(expr, _isDegrees.value, xVal + h)
+            val fMinus = CalculatorEvaluator.evaluate(expr, _isDegrees.value, xVal - h)
+            val result = (fPlus - fMinus) / (2 * h)
+            _functionResult.value = "f'(" + formatResult(xVal) + ") ≈ " + formatResult(result)
+        } catch (e: Exception) {
+            _functionResult.value = "Error"
+        }
+    }
+
+    fun evaluateDefiniteIntegral() {
+        try {
+            val expr = _functionFormula.value
+            val aStr = _functionPoint.value
+            val bStr = _functionPointB.value
+            if (expr.isEmpty() || aStr.isEmpty() || bStr.isEmpty()) return
+            val aEval = CalculatorEvaluator.evaluate(aStr, _isDegrees.value)
+            val bEval = CalculatorEvaluator.evaluate(bStr, _isDegrees.value)
+            
+            val a = kotlin.math.min(aEval, bEval)
+            val b = kotlin.math.max(aEval, bEval)
+            val sign = if (aEval > bEval) -1.0 else 1.0
+            
+            if (a == b) {
+                _functionResult.value = "∫f(x)dx = 0"
+                return
+            }
+
+            val n = 1000 // Fixed subintervals for Simpson's rule (must be even)
+            val h = (b - a) / n
+            var sum = CalculatorEvaluator.evaluate(expr, _isDegrees.value, a) +
+                      CalculatorEvaluator.evaluate(expr, _isDegrees.value, b)
+            
+            for (i in 1 until n step 2) {
+                sum += 4 * CalculatorEvaluator.evaluate(expr, _isDegrees.value, a + i * h)
+            }
+            for (i in 2 until n - 1 step 2) {
+                sum += 2 * CalculatorEvaluator.evaluate(expr, _isDegrees.value, a + i * h)
+            }
+            val result = (sum * h / 3) * sign
+            _functionResult.value = "∫f(x)dx ≈ " + formatResult(result)
+        } catch (e: Exception) {
+            _functionResult.value = "Error"
         }
     }
 }
