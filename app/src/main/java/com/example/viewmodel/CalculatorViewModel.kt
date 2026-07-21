@@ -382,6 +382,9 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
 
     fun toggleFunctionMode() {
         _isFunctionMode.value = !_isFunctionMode.value
+        if (_isFunctionMode.value) {
+            _isAdvancedMode.value = true
+        }
     }
 
     fun setFocusedField(field: Int) {
@@ -412,6 +415,14 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
             }
             "sin", "cos", "tan", "ln", "log", "sqrt" -> {
                 currentFlow.value = "$current$key("
+                _functionResult.value = ""
+            }
+            "pi" -> {
+                currentFlow.value = "${current}π"
+                _functionResult.value = ""
+            }
+            "EE" -> {
+                currentFlow.value = "${current}e"
                 _functionResult.value = ""
             }
             else -> {

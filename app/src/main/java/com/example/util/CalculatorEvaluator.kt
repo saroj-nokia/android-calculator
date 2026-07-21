@@ -52,13 +52,29 @@ object CalculatorEvaluator {
                     result.add(sb.toString())
                 }
                 c.isLetter() -> {
-                    val sb = StringBuilder()
-                    while (i < s.length && s[i].isLetter()) {
-                        sb.append(s[i])
-                        i++
+                    val keywords = listOf("asin", "acos", "atan", "sqrt", "sin", "cos", "tan", "log", "nPr", "nCr", "pi", "ln", "e", "x")
+                    var matched = false
+                    // Look for the longest matching keyword starting at i
+                    for (len in 4 downTo 1) { // max keyword length is 4
+                        if (i + len <= s.length) {
+                            val sub = s.substring(i, i + len)
+                            if (keywords.contains(sub)) {
+                                result.add(sub)
+                                i += len
+                                matched = true
+                                break
+                            }
+                        }
                     }
-                    val word = sb.toString()
-                    result.add(word)
+                    if (!matched) {
+                        // Fallback behavior if no keyword matches any prefix
+                        val sb = StringBuilder()
+                        while (i < s.length && s[i].isLetter()) {
+                            sb.append(s[i])
+                            i++
+                        }
+                        result.add(sb.toString())
+                    }
                 }
                 else -> {
                     i++

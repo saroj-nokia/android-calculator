@@ -209,4 +209,27 @@ class ExampleRobolectricTest {
         val asinOutOfRange = CalculatorEvaluator.evaluate("asin(1.5)", false)
         assertTrue(asinOutOfRange.isNaN())
     }
+
+    @Test
+    fun `test function tokenization edge cases`() {
+        // xsin(30) with x=2 in degrees -> 2 * sin(30) = 2 * 0.5 = 1.0
+        val eval1 = CalculatorEvaluator.evaluate("xsin(30)", true, xValue = 2.0)
+        assertEquals(1.0, eval1, 0.001)
+
+        // xe with x=5 -> 5 * e
+        val eval2 = CalculatorEvaluator.evaluate("xe", false, xValue = 5.0)
+        assertEquals(5.0 * Math.E, eval2, 0.001)
+
+        // xpi with x=4 -> 4 * pi
+        val eval3 = CalculatorEvaluator.evaluate("xpi", false, xValue = 4.0)
+        assertEquals(4.0 * Math.PI, eval3, 0.001)
+
+        // asin(0.5) -> should still work, not tokenize as "a" and "sin"
+        val eval4 = CalculatorEvaluator.evaluate("asin(0.5)", true)
+        assertEquals(30.0, eval4, 0.001)
+
+        // xsinx with x=30 in degrees -> 30 * sin(30) = 30 * 0.5 = 15.0
+        val eval5 = CalculatorEvaluator.evaluate("xsinx", true, xValue = 30.0)
+        assertEquals(15.0, eval5, 0.001)
+    }
 }
