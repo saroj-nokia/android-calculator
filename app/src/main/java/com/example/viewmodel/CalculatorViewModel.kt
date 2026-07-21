@@ -168,6 +168,7 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     private fun evaluateAndSave() {
+        liveEvalJob?.cancel()
         val expr = _formula.value.trim()
         if (expr.isEmpty()) return
 
