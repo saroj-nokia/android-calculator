@@ -58,6 +58,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -77,7 +78,7 @@ import com.example.ui.theme.*
 import com.example.viewmodel.CalculatorViewModel
 import com.example.viewmodel.HistoryItem
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun CalculatorScreen(viewModel: CalculatorViewModel) {
     val formula by viewModel.formula.collectAsStateWithLifecycle()
@@ -226,7 +227,6 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    @OptIn(ExperimentalFoundationApi::class)
                     if (calculationResult.isNotEmpty()) {
                         val clipboardManager = LocalClipboardManager.current
                         val context = LocalContext.current
@@ -296,11 +296,11 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                             ) {
                                 val previousFormula by viewModel.previousFormula.collectAsStateWithLifecycle()
                                 val undoEnabled = previousFormula != null
-                                val undoLabel = if (undoEnabled) "UNDO" else " "
+                                val undoLabel = "UNDO"
                                 
                                 CalculatorKeyButton("nPr", "key_npr", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("nPr") }
                                 CalculatorKeyButton("nCr", "key_ncr", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("nCr") }
-                                CalculatorKeyButton(undoLabel, "key_undo", modifier = Modifier.weight(2f), isSci = true) { if (undoEnabled) viewModel.onUndo() }
+                                CalculatorKeyButton(undoLabel, "key_undo", modifier = Modifier.weight(2f).alpha(if (undoEnabled) 1f else 0.4f), isSci = true) { if (undoEnabled) viewModel.onUndo() }
                             }
                             // Row 1 Advanced Functions
                             Row(
