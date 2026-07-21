@@ -78,6 +78,38 @@ import com.example.ui.theme.*
 import com.example.viewmodel.CalculatorViewModel
 import com.example.viewmodel.HistoryItem
 
+private val standardGrid = listOf(
+    listOf(
+        Triple("AC", "key_ac", AccentOrange),
+        Triple("DEL", "key_del", AccentOrange),
+        Triple("%", "key_percent", AccentOrange),
+        Triple("÷", "key_divide", AccentOrange)
+    ),
+    listOf(
+        Triple("7", "key_7", TextPrimary),
+        Triple("8", "key_8", TextPrimary),
+        Triple("9", "key_9", TextPrimary),
+        Triple("×", "key_multiply", AccentOrange)
+    ),
+    listOf(
+        Triple("4", "key_4", TextPrimary),
+        Triple("5", "key_5", TextPrimary),
+        Triple("6", "key_6", TextPrimary),
+        Triple("−", "key_minus", AccentOrange)
+    ),
+    listOf(
+        Triple("1", "key_1", TextPrimary),
+        Triple("2", "key_2", TextPrimary),
+        Triple("3", "key_3", TextPrimary),
+        Triple("+", "key_plus", AccentOrange)
+    ),
+    listOf(
+        Triple("0", "key_0", TextPrimary),
+        Triple(".", "key_dot", TextPrimary),
+        Triple("=", "key_equal", AccentTeal) // Accent custom equals color matches Android 16 premium ui style
+    )
+)
+
 @OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun CalculatorScreen(viewModel: CalculatorViewModel) {
@@ -334,39 +366,6 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                             }
                         }
                     }
-
-                    // Main Operational grid
-                    val standardGrid = listOf(
-                        listOf(
-                            Triple("AC", "key_ac", AccentOrange),
-                            Triple("DEL", "key_del", AccentOrange),
-                            Triple("%", "key_percent", AccentOrange),
-                            Triple("÷", "key_divide", AccentOrange)
-                        ),
-                        listOf(
-                            Triple("7", "key_7", TextPrimary),
-                            Triple("8", "key_8", TextPrimary),
-                            Triple("9", "key_9", TextPrimary),
-                            Triple("×", "key_multiply", AccentOrange)
-                        ),
-                        listOf(
-                            Triple("4", "key_4", TextPrimary),
-                            Triple("5", "key_5", TextPrimary),
-                            Triple("6", "key_6", TextPrimary),
-                            Triple("−", "key_minus", AccentOrange)
-                        ),
-                        listOf(
-                            Triple("1", "key_1", TextPrimary),
-                            Triple("2", "key_2", TextPrimary),
-                            Triple("3", "key_3", TextPrimary),
-                            Triple("+", "key_plus", AccentOrange)
-                        ),
-                        listOf(
-                            Triple("0", "key_0", TextPrimary),
-                            Triple(".", "key_dot", TextPrimary),
-                            Triple("=", "key_equal", AccentTeal) // Accent custom equals color matches Android 16 premium ui style
-                        )
-                    )
 
                     standardGrid.forEach { rowSpec ->
                         Row(

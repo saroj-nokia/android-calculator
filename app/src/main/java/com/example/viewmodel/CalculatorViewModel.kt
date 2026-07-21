@@ -10,6 +10,8 @@ import com.example.util.CalculatorEvaluator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import java.text.DecimalFormat
 import kotlin.math.abs
 
@@ -44,6 +46,8 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
     private val _previousFormula = MutableStateFlow<String?>(null)
     val previousFormula: StateFlow<String?> = _previousFormula
 
+    private var liveEvalJob: Job? = null
+
     init {
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             loadHistory()
@@ -66,6 +70,7 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
             "AC" -> {
                 _formula.value = ""
                 _calculationResult.value = ""
+                liveEvalJob?.cancel()
             }
             "DEL" -> {
                 if (current.isNotEmpty()) {
@@ -138,23 +143,27 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     private fun triggerLiveEvaluation() {
-        val expr = _formula.value.trim()
-        if (expr.isEmpty()) {
-            _calculationResult.value = ""
-            return
-        }
+        liveEvalJob?.cancel()
+        liveEvalJob = viewModelScope.launch {
+            delay(120)
+            val expr = _formula.value.trim()
+            if (expr.isEmpty()) {
+                _calculationResult.value = ""
+                return@launch
+            }
 
-        // Only evaluate if it contains digits, constants or closing parenthesis (ends beautifully)
-        try {
-            val result = CalculatorEvaluator.evaluate(expr, _isDegrees.value)
-            if (!result.isNaN() && !result.isInfinite()) {
-                _calculationResult.value = "= " + formatResult(result)
-            } else {
+            // Only evaluate if it contains digits, constants or closing parenthesis (ends beautifully)
+            try {
+                val result = CalculatorEvaluator.evaluate(expr, _isDegrees.value)
+                if (!result.isNaN() && !result.isInfinite()) {
+                    _calculationResult.value = "= " + formatResult(result)
+                } else {
+                    _calculationResult.value = ""
+                }
+            } catch (e: Throwable) {
+                // Live evaluation shouldn't pollute screen with error during typing
                 _calculationResult.value = ""
             }
-        } catch (e: Throwable) {
-            // Live evaluation shouldn't pollute screen with error during typing
-            _calculationResult.value = ""
         }
     }
 
@@ -309,7 +318,7 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     private fun saveHistoryToPrefs() {
-        viewModelScope.launch {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             try {
                 // simple record separation using custom encoding
                 // Item: id|||formula|||result
