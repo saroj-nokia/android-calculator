@@ -167,7 +167,26 @@ object CalculatorEvaluator {
                 consume()
                 return parseUnary()
             }
-            return parseFactor()
+            return parsePermutation()
+        }
+
+        private fun parsePermutation(): Double {
+            var val1 = parseFactor()
+            while (true) {
+                val p = peek()
+                if (p == "nPr" || p == "nCr") {
+                    val op = consume()
+                    val val2 = parseFactor()
+                    if (op == "nPr") {
+                        val1 = factorial(val1) / factorial(val1 - val2)
+                    } else {
+                        val1 = factorial(val1) / (factorial(val2) * factorial(val1 - val2))
+                    }
+                } else {
+                    break
+                }
+            }
+            return val1
         }
 
         private fun isFunction(name: String): Boolean {

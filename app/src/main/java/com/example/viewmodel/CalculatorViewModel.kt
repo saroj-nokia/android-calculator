@@ -38,6 +38,12 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
     private val _history = MutableStateFlow<List<HistoryItem>>(emptyList())
     val history: StateFlow<List<HistoryItem>> = _history
 
+    private val _memoryValue = MutableStateFlow(0.0)
+    val memoryValue: StateFlow<Double> = _memoryValue
+
+    private val _previousFormula = MutableStateFlow<String?>(null)
+    val previousFormula: StateFlow<String?> = _previousFormula
+
     init {
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             loadHistory()
@@ -91,6 +97,12 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
             "x!" -> {
                 if (current.isNotEmpty() && !isOperator(current.last()) && current.last() != '!') {
                     _formula.value = "$current!"
+                }
+                triggerLiveEvaluation()
+            }
+            "nPr", "nCr" -> {
+                if (current.isNotEmpty() && !isOperator(current.last()) && !current.endsWith("nPr") && !current.endsWith("nCr")) {
+                    _formula.value = "$current$key"
                 }
                 triggerLiveEvaluation()
             }
@@ -170,6 +182,8 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
             _history.value = updated.take(50) // Keep last 50 items
             saveHistoryToPrefs()
 
+            _previousFormula.value = expr
+
             // Reset current input to output for rolling calculation
             _formula.value = rawFormatted
             _calculationResult.value = ""
@@ -181,6 +195,61 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
     fun clearHistory() {
         _history.value = emptyList()
         saveHistoryToPrefs()
+    }
+
+    fun deleteHistoryItem(item: HistoryItem) {
+        val updated = _history.value.filter { it.id != item.id }
+        _history.value = updated
+        saveHistoryToPrefs()
+    }
+
+    fun onUndo() {
+        val prev = _previousFormula.value
+        if (prev != null) {
+            _formula.value = prev
+            _previousFormula.value = null
+            triggerLiveEvaluation()
+        }
+    }
+
+    fun onMemoryAdd() {
+        val currentVal = evaluateCurrent()
+        if (currentVal != null) {
+            _memoryValue.value += currentVal
+        }
+    }
+
+    fun onMemorySubtract() {
+        val currentVal = evaluateCurrent()
+        if (currentVal != null) {
+            _memoryValue.value -= currentVal
+        }
+    }
+
+    fun onMemoryRecall() {
+        val memStr = formatRawResult(_memoryValue.value)
+        if (memStr != "Error" && !memStr.endsWith("Infinity")) {
+            val current = _formula.value
+            if (current.isEmpty() || isOperator(current.last())) {
+                 _formula.value = current + memStr
+            } else {
+                 _formula.value = current + "×" + memStr
+            }
+            triggerLiveEvaluation()
+        }
+    }
+
+    fun onMemoryClear() {
+        _memoryValue.value = 0.0
+    }
+
+    private fun evaluateCurrent(): Double? {
+        if (_formula.value.isEmpty()) return 0.0
+        return try {
+            CalculatorEvaluator.evaluate(_formula.value, _isDegrees.value)
+        } catch (e: Throwable) {
+            null
+        }
     }
 
     fun loadHistoryItem(item: HistoryItem) {

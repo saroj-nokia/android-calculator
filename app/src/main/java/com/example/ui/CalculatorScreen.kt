@@ -6,9 +6,11 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,12 +37,19 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,13 +60,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.widget.Toast
 import com.example.ui.theme.*
 import com.example.viewmodel.CalculatorViewModel
 import com.example.viewmodel.HistoryItem
@@ -121,6 +136,17 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        val memoryValue by viewModel.memoryValue.collectAsStateWithLifecycle()
+                        if (memoryValue != 0.0) {
+                            Text(
+                                text = "M",
+                                color = MaterialTheme.colorScheme.primary,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(end = 12.dp)
+                            )
+                        }
+
                         // Degrees or Radians Toggle
                         Box(
                             modifier = Modifier
@@ -200,7 +226,11 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
 
                     Spacer(modifier = Modifier.height(10.dp))
 
+                    @OptIn(ExperimentalFoundationApi::class)
                     if (calculationResult.isNotEmpty()) {
+                        val clipboardManager = LocalClipboardManager.current
+                        val context = LocalContext.current
+                        
                         Text(
                             text = calculationResult,
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f),
@@ -210,6 +240,13 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                             maxLines = 1,
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .combinedClickable(
+                                    onClick = {},
+                                    onLongClick = {
+                                        clipboardManager.setText(AnnotatedString(calculationResult.removePrefix("= ")))
+                                        Toast.makeText(context, "Result copied", Toast.LENGTH_SHORT).show()
+                                    }
+                                )
                                 .testTag("result_display")
                         )
                     } else {
@@ -242,6 +279,29 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                             modifier = Modifier.padding(bottom = 12.dp)
                         ) {
+                            // Row M Memory & Combinatorics
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                CalculatorKeyButton("MC", "key_mc", modifier = Modifier.weight(1f), isSci = true) { viewModel.onMemoryClear() }
+                                CalculatorKeyButton("MR", "key_mr", modifier = Modifier.weight(1f), isSci = true) { viewModel.onMemoryRecall() }
+                                CalculatorKeyButton("M+", "key_m_plus", modifier = Modifier.weight(1f), isSci = true) { viewModel.onMemoryAdd() }
+                                CalculatorKeyButton("M-", "key_m_minus", modifier = Modifier.weight(1f), isSci = true) { viewModel.onMemorySubtract() }
+                            }
+                            // Row 0 Advanced Functions
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                val previousFormula by viewModel.previousFormula.collectAsStateWithLifecycle()
+                                val undoEnabled = previousFormula != null
+                                val undoLabel = if (undoEnabled) "UNDO" else " "
+                                
+                                CalculatorKeyButton("nPr", "key_npr", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("nPr") }
+                                CalculatorKeyButton("nCr", "key_ncr", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("nCr") }
+                                CalculatorKeyButton(undoLabel, "key_undo", modifier = Modifier.weight(2f), isSci = true) { if (undoEnabled) viewModel.onUndo() }
+                            }
                             // Row 1 Advanced Functions
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -406,11 +466,17 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                                     modifier = Modifier.weight(1f),
                                     verticalArrangement = Arrangement.spacedBy(16.dp)
                                 ) {
-                                    items(history) { item ->
-                                        HistoryRowItem(item = item, onSelect = {
-                                            viewModel.loadHistoryItem(item)
-                                            showHistoryDialog = false
-                                        })
+                                    items(history, key = { it.id }) { item ->
+                                        HistoryRowItem(
+                                            item = item,
+                                            onSelect = {
+                                                viewModel.loadHistoryItem(item)
+                                                showHistoryDialog = false
+                                            },
+                                            onDelete = {
+                                                viewModel.deleteHistoryItem(item)
+                                            }
+                                        )
                                     }
                                 }
                             }
@@ -466,6 +532,8 @@ fun CalculatorKeyButton(
     }
 
     val contrast = LocalAppContrast.current
+    val haptic = LocalHapticFeedback.current
+
     val borderModifier = when {
         contrast > 0.01f -> {
             val borderColor = if (isSystemInDarkTheme()) Color.White else Color.Black
@@ -486,6 +554,7 @@ fun CalculatorKeyButton(
             .background(buttonBk)
             .then(borderModifier)
             .clickable {
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 onClick()
             }
             .testTag(tag),
@@ -506,33 +575,65 @@ fun CalculatorKeyButton(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HistoryRowItem(item: HistoryItem, onSelect: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
-            .clickable { onSelect() }
-            .padding(16.dp),
-        horizontalAlignment = Alignment.End
+fun HistoryRowItem(item: HistoryItem, onSelect: () -> Unit, onDelete: () -> Unit) {
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = {
+            if (it == SwipeToDismissBoxValue.EndToStart || it == SwipeToDismissBoxValue.StartToEnd) {
+                onDelete()
+                true
+            } else {
+                false
+            }
+        }
+    )
+
+    SwipeToDismissBox(
+        state = dismissState,
+        backgroundContent = {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.errorContainer)
+                    .padding(horizontal = 20.dp),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Delete",
+                    tint = MaterialTheme.colorScheme.onErrorContainer
+                )
+            }
+        }
     ) {
-        Text(
-            text = item.formula,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 15.sp,
-            textAlign = TextAlign.End,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = "= " + item.result,
-            color = MaterialTheme.colorScheme.primary,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
+                .clickable { onSelect() }
+                .padding(16.dp),
+            horizontalAlignment = Alignment.End
+        ) {
+            Text(
+                text = item.formula,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 15.sp,
+                textAlign = TextAlign.End,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "= " + item.result,
+                color = MaterialTheme.colorScheme.primary,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
     }
 }
