@@ -52,8 +52,14 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
     private val _isComplexMode = MutableStateFlow(false)
     val isComplexMode: StateFlow<Boolean> = _isComplexMode
 
-    private val _complexInput = MutableStateFlow("")
-    val complexInput: StateFlow<String> = _complexInput
+    private val _complexOperand1 = MutableStateFlow("")
+    val complexOperand1: StateFlow<String> = _complexOperand1
+
+    private val _complexOperand2 = MutableStateFlow("")
+    val complexOperand2: StateFlow<String> = _complexOperand2
+
+    private val _complexOperator = MutableStateFlow('+')
+    val complexOperator: StateFlow<Char> = _complexOperator
 
     private val _complexResult = MutableStateFlow("")
     val complexResult: StateFlow<String> = _complexResult
@@ -406,7 +412,13 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
         if (_isComplexMode.value) {
             _isFunctionMode.value = false
             _isAdvancedMode.value = true
+            _focusedField.value = 0
         }
+    }
+
+    fun setComplexOperator(op: Char) {
+        _complexOperator.value = op
+        _complexResult.value = ""
     }
 
     fun setFocusedField(field: Int) {
@@ -455,16 +467,17 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     private fun handleComplexKeyPress(key: String) {
-        val current = _complexInput.value
+        val currentFlow = if (_focusedField.value == 1) _complexOperand2 else _complexOperand1
+        val current = currentFlow.value
 
         when (key) {
             "AC" -> {
-                _complexInput.value = ""
+                currentFlow.value = ""
                 _complexResult.value = ""
             }
             "DEL" -> {
                 if (current.isNotEmpty()) {
-                    _complexInput.value = current.dropLast(1)
+                    currentFlow.value = current.dropLast(1)
                 }
                 _complexResult.value = ""
             }
@@ -472,11 +485,19 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
                 evaluateComplexExpression()
             }
             "i" -> {
-                _complexInput.value = "${current}i"
+                currentFlow.value = "${current}i"
+                _complexResult.value = ""
+            }
+            "×", "÷", "*", "/" -> {
+                val op = if (key == "×" || key == "*") '×' else '÷'
+                _complexOperator.value = op
+            }
+            "+", "-" -> {
+                currentFlow.value = "$current$key"
                 _complexResult.value = ""
             }
             else -> {
-                _complexInput.value = "$current$key"
+                currentFlow.value = "$current$key"
                 _complexResult.value = ""
             }
         }
@@ -484,9 +505,19 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
 
     fun evaluateComplexExpression() {
         try {
-            val expr = _complexInput.value
-            if (expr.isEmpty()) return
-            val result = com.example.util.ComplexEvaluator.evaluate(expr)
+            val expr1 = _complexOperand1.value
+            val expr2 = _complexOperand2.value
+            if (expr1.isEmpty() || expr2.isEmpty()) return
+            val c1 = com.example.util.ComplexEvaluator.parseLiteral(expr1)
+            val c2 = com.example.util.ComplexEvaluator.parseLiteral(expr2)
+            val op = _complexOperator.value
+            val result = when (op) {
+                '+' -> c1 + c2
+                '-' -> c1 - c2
+                '×', '*' -> c1 * c2
+                '÷', '/' -> c1 / c2
+                else -> throw IllegalArgumentException("Unknown operator")
+            }
             _complexResult.value = "= " + com.example.util.ComplexEvaluator.formatComplex(result)
         } catch (e: Exception) {
             _complexResult.value = "Error"
@@ -495,9 +526,9 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
 
     fun evaluateModulus() {
         try {
-            val expr = _complexInput.value
+            val expr = if (_focusedField.value == 1) _complexOperand2.value else _complexOperand1.value
             if (expr.isEmpty()) return
-            val c = com.example.util.ComplexEvaluator.evaluate(expr)
+            val c = com.example.util.ComplexEvaluator.parseLiteral(expr)
             val result = c.modulus()
             _complexResult.value = "|z| = " + formatResult(result)
         } catch (e: Exception) {
@@ -507,9 +538,9 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
 
     fun evaluateConjugate() {
         try {
-            val expr = _complexInput.value
+            val expr = if (_focusedField.value == 1) _complexOperand2.value else _complexOperand1.value
             if (expr.isEmpty()) return
-            val c = com.example.util.ComplexEvaluator.evaluate(expr)
+            val c = com.example.util.ComplexEvaluator.parseLiteral(expr)
             val result = c.conjugate()
             _complexResult.value = "z̄ = " + com.example.util.ComplexEvaluator.formatComplex(result)
         } catch (e: Exception) {

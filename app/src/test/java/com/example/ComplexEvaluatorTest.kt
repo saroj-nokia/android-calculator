@@ -20,19 +20,25 @@ class ComplexEvaluatorTest {
 
     @Test
     fun testEvaluateOperations() {
+        val c1 = ComplexEvaluator.parseLiteral("1+1i")
+        val c2 = ComplexEvaluator.parseLiteral("2-3i")
+        val c3 = ComplexEvaluator.parseLiteral("1-1i")
+        val c4 = ComplexEvaluator.parseLiteral("1+2i")
+        val c5 = ComplexEvaluator.parseLiteral("3+4i")
+
         // Addition
-        assertEquals(Complex(4.0, 6.0), ComplexEvaluator.evaluate("1+2i + 3+4i"))
+        assertEquals(Complex(4.0, 6.0), c4 + c5)
         
         // Subtraction
-        assertEquals(Complex(-2.0, -2.0), ComplexEvaluator.evaluate("1+2i - 3+4i"))
+        assertEquals(Complex(-2.0, -2.0), c4 - c5)
         
         // Multiplication
         // (1+1i)*(2-3i) = 2 - 3i + 2i - 3i^2 = 2 - i + 3 = 5 - i
-        assertEquals(Complex(5.0, -1.0), ComplexEvaluator.evaluate("1+1i * 2-3i"))
+        assertEquals(Complex(5.0, -1.0), c1 * c2)
         
         // Division
         // (1+1i)/(1-1i) = (1+1i)(1+1i)/2 = (1+2i-1)/2 = i
-        assertEquals(Complex(0.0, 1.0), ComplexEvaluator.evaluate("1+1i / 1-1i"))
+        assertEquals(Complex(0.0, 1.0), c1 / c3)
     }
 
     @Test
@@ -45,7 +51,7 @@ class ComplexEvaluatorTest {
     @Test
     fun testDivisionByZero() {
         assertThrows(ArithmeticException::class.java) {
-            ComplexEvaluator.evaluate("1+1i / 0")
+            ComplexEvaluator.parseLiteral("1+1i") / ComplexEvaluator.parseLiteral("0")
         }
     }
 

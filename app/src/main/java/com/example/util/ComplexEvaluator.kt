@@ -67,49 +67,6 @@ object ComplexEvaluator {
         }
     }
 
-    fun evaluate(expression: String): Complex {
-        val sanitized = expression.replace("×", "*").replace("÷", "/").trim().replace(" ", "")
-        if (sanitized.isEmpty()) throw IllegalArgumentException("Empty expression")
-        
-        // Try * and / first
-        for (op in listOf("*", "/")) {
-            val idx = sanitized.indexOf(op)
-            if (idx != -1) {
-                val left = sanitized.substring(0, idx)
-                val right = sanitized.substring(idx + 1)
-                try {
-                    val c1 = parseLiteral(left)
-                    val c2 = parseLiteral(right)
-                    return if (op == "*") c1 * c2 else c1 / c2
-                } catch (e: IllegalArgumentException) {
-                    // Try next operator
-                }
-            }
-        }
-
-        // Try + and - (find operators connecting two valid literals)
-        for (i in 1 until sanitized.length - 1) {
-            val c = sanitized[i]
-            if (c == '+' || c == '-') {
-                if (sanitized[i - 1].equals('e', true)) continue
-                
-                val leftStr = sanitized.substring(0, i)
-                val rightStr = sanitized.substring(i + 1)
-                
-                try {
-                    val c1 = parseLiteral(leftStr)
-                    val c2 = parseLiteral(rightStr)
-                    return if (c == '+') c1 + c2 else c1 - c2
-                } catch (e: IllegalArgumentException) {
-                    // Try next operator
-                }
-            }
-        }
-
-        // Single literal
-        return parseLiteral(sanitized)
-    }
-
     fun formatComplex(c: Complex): String {
         val re = c.re
         val im = c.im

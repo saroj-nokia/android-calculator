@@ -279,41 +279,59 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                     horizontalAlignment = Alignment.End
                 ) {
                     if (isComplexMode) {
-                        val complexInput by viewModel.complexInput.collectAsStateWithLifecycle()
+                        val complexOperand1 by viewModel.complexOperand1.collectAsStateWithLifecycle()
+                        val complexOperand2 by viewModel.complexOperand2.collectAsStateWithLifecycle()
+                        val complexOperator by viewModel.complexOperator.collectAsStateWithLifecycle()
                         val complexResult by viewModel.complexResult.collectAsStateWithLifecycle()
+                        val focusedField by viewModel.focusedField.collectAsStateWithLifecycle()
 
-                        val fontSize = remember(complexInput) {
-                            val textLength = complexInput.length
-                            when {
-                                textLength > 24 -> 24.sp
-                                textLength > 16 -> 32.sp
-                                else -> 46.sp
-                            }
+                        val selectedColor = MaterialTheme.colorScheme.primary
+                        val unselectedColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+
+                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Text("Op 1 =", fontSize = 24.sp, color = if (focusedField == 0) selectedColor else unselectedColor, modifier = Modifier.clickable { viewModel.setFocusedField(0) })
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = complexOperand1.ifEmpty { "..." },
+                                color = if (focusedField == 0) selectedColor else unselectedColor,
+                                fontSize = 24.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.clickable { viewModel.setFocusedField(0) }.weight(1f),
+                                textAlign = TextAlign.End
+                            )
                         }
-
-                        Text(
-                            text = complexInput.ifEmpty { "0" },
-                            color = MaterialTheme.colorScheme.onBackground,
-                            fontSize = fontSize,
-                            fontWeight = FontWeight.Light,
-                            textAlign = TextAlign.End,
-                            maxLines = 4,
-                            lineHeight = fontSize * 1.25,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .testTag("complex_formula_display")
-                        )
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
+                        Spacer(Modifier.height(8.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.End) {
+                            Text(
+                                text = complexOperator.toString(),
+                                color = MaterialTheme.colorScheme.onBackground,
+                                fontSize = 24.sp
+                            )
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Text("Op 2 =", fontSize = 24.sp, color = if (focusedField == 1) selectedColor else unselectedColor, modifier = Modifier.clickable { viewModel.setFocusedField(1) })
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = complexOperand2.ifEmpty { "..." },
+                                color = if (focusedField == 1) selectedColor else unselectedColor,
+                                fontSize = 24.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.clickable { viewModel.setFocusedField(1) }.weight(1f),
+                                textAlign = TextAlign.End
+                            )
+                        }
+                        
+                        Spacer(Modifier.height(16.dp))
                         if (complexResult.isNotEmpty()) {
                             val clipboardManager = LocalClipboardManager.current
                             val context = LocalContext.current
                             
                             Text(
                                 text = complexResult,
-                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f),
+                                color = MaterialTheme.colorScheme.onBackground,
                                 fontSize = 26.sp,
                                 fontWeight = FontWeight.Medium,
                                 textAlign = TextAlign.End,
@@ -572,7 +590,34 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                             modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            CalculatorKeyButton("=", "key_eval_complex", modifier = Modifier.weight(1f), isSci = true) { viewModel.evaluateComplexExpression() }
+                            val op by viewModel.complexOperator.collectAsStateWithLifecycle()
+                            Row(
+                                modifier = Modifier
+                                    .weight(1.5f)
+                                    .clip(RoundedCornerShape(24.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                                horizontalArrangement = Arrangement.SpaceEvenly,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                listOf('+', '-', '×', '÷').forEach { o ->
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(24.dp))
+                                            .background(if (op == o) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent)
+                                            .clickable { viewModel.setComplexOperator(o) }
+                                            .padding(vertical = 12.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            o.toString(),
+                                            color = if (op == o) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 18.sp
+                                        )
+                                    }
+                                }
+                            }
                             CalculatorKeyButton("|z|", "key_eval_mod", modifier = Modifier.weight(1f), isSci = true) { viewModel.evaluateModulus() }
                             CalculatorKeyButton("z̄", "key_eval_conj", modifier = Modifier.weight(1f), isSci = true) { viewModel.evaluateConjugate() }
                         }
