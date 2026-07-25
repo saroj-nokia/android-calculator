@@ -119,6 +119,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
     val calculationResult by viewModel.calculationResult.collectAsStateWithLifecycle()
     val history by viewModel.history.collectAsStateWithLifecycle()
     val isFunctionMode by viewModel.isFunctionMode.collectAsStateWithLifecycle()
+    val isComplexMode by viewModel.isComplexMode.collectAsStateWithLifecycle()
 
     var showHistoryDialog by remember { mutableStateOf(false) }
 
@@ -224,6 +225,28 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
 
                         Spacer(modifier = Modifier.width(10.dp))
 
+                        // Complex Mode toggle
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(if (isComplexMode) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant)
+                                .clickable {
+                                    viewModel.toggleComplexMode()
+                                }
+                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                                .testTag("complex_mode_toggle"),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "ℂ",
+                                color = if (isComplexMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(10.dp))
+
                         // Advanced Scientific Notation / Functions mode trigger
                         Box(
                             modifier = Modifier
@@ -255,7 +278,61 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                     verticalArrangement = Arrangement.Bottom,
                     horizontalAlignment = Alignment.End
                 ) {
-                    if (isFunctionMode) {
+                    if (isComplexMode) {
+                        val complexInput by viewModel.complexInput.collectAsStateWithLifecycle()
+                        val complexResult by viewModel.complexResult.collectAsStateWithLifecycle()
+
+                        val fontSize = remember(complexInput) {
+                            val textLength = complexInput.length
+                            when {
+                                textLength > 24 -> 24.sp
+                                textLength > 16 -> 32.sp
+                                else -> 46.sp
+                            }
+                        }
+
+                        Text(
+                            text = complexInput.ifEmpty { "0" },
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontSize = fontSize,
+                            fontWeight = FontWeight.Light,
+                            textAlign = TextAlign.End,
+                            maxLines = 4,
+                            lineHeight = fontSize * 1.25,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("complex_formula_display")
+                        )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        if (complexResult.isNotEmpty()) {
+                            val clipboardManager = LocalClipboardManager.current
+                            val context = LocalContext.current
+                            
+                            Text(
+                                text = complexResult,
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f),
+                                fontSize = 26.sp,
+                                fontWeight = FontWeight.Medium,
+                                textAlign = TextAlign.End,
+                                maxLines = 2,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .combinedClickable(
+                                        onClick = {},
+                                        onLongClick = {
+                                            clipboardManager.setText(AnnotatedString(complexResult.substringAfter("= ")))
+                                            Toast.makeText(context, "Result copied", Toast.LENGTH_SHORT).show()
+                                        }
+                                    )
+                                    .testTag("complex_result_display")
+                            )
+                        } else {
+                            Spacer(modifier = Modifier.height(32.dp))
+                        }
+                    } else if (isFunctionMode) {
                         val functionFormula by viewModel.functionFormula.collectAsStateWithLifecycle()
                         val functionPoint by viewModel.functionPoint.collectAsStateWithLifecycle()
                         val functionPointB by viewModel.functionPointB.collectAsStateWithLifecycle()
@@ -433,6 +510,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                                 CalculatorKeyButton("nPr", "key_npr", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("nPr") }
                                 CalculatorKeyButton("nCr", "key_ncr", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("nCr") }
                                 CalculatorKeyButton("x", "key_x_var", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("x") }
+                                CalculatorKeyButton("i", "key_i_var", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("i") }
                                 CalculatorKeyButton(undoLabel, "key_undo", modifier = Modifier.weight(1f).alpha(if (undoEnabled) 1f else 0.4f), isSci = true) { if (undoEnabled) viewModel.onUndo() }
                             }
                             // Row 1 Advanced Functions
@@ -481,6 +559,22 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                             CalculatorKeyButton("f(a)", "key_eval_f", modifier = Modifier.weight(1f), isSci = true) { viewModel.evaluateFunctionAtPoint() }
                             CalculatorKeyButton("f'(a)", "key_eval_deriv", modifier = Modifier.weight(1f), isSci = true) { viewModel.evaluateDerivativeAtPoint() }
                             CalculatorKeyButton("∫f(x)dx", "key_eval_int", modifier = Modifier.weight(1f), isSci = true) { viewModel.evaluateDefiniteIntegral() }
+                        }
+                    }
+
+                    // Complex Mode Action Buttons
+                    AnimatedVisibility(
+                        visible = isComplexMode,
+                        enter = expandVertically(animationSpec = tween(250)) + fadeIn(),
+                        exit = shrinkVertically(animationSpec = tween(220)) + fadeOut()
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            CalculatorKeyButton("=", "key_eval_complex", modifier = Modifier.weight(1f), isSci = true) { viewModel.evaluateComplexExpression() }
+                            CalculatorKeyButton("|z|", "key_eval_mod", modifier = Modifier.weight(1f), isSci = true) { viewModel.evaluateModulus() }
+                            CalculatorKeyButton("z̄", "key_eval_conj", modifier = Modifier.weight(1f), isSci = true) { viewModel.evaluateConjugate() }
                         }
                     }
 

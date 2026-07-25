@@ -49,6 +49,15 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
     private val _isFunctionMode = MutableStateFlow(false)
     val isFunctionMode: StateFlow<Boolean> = _isFunctionMode
 
+    private val _isComplexMode = MutableStateFlow(false)
+    val isComplexMode: StateFlow<Boolean> = _isComplexMode
+
+    private val _complexInput = MutableStateFlow("")
+    val complexInput: StateFlow<String> = _complexInput
+
+    private val _complexResult = MutableStateFlow("")
+    val complexResult: StateFlow<String> = _complexResult
+
     private val _functionFormula = MutableStateFlow("")
     val functionFormula: StateFlow<String> = _functionFormula
 
@@ -82,6 +91,10 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun onKeyPress(key: String) {
+        if (_isComplexMode.value) {
+            handleComplexKeyPress(key)
+            return
+        }
         if (_isFunctionMode.value) {
             handleFunctionKeyPress(key)
             return
@@ -383,6 +396,15 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
     fun toggleFunctionMode() {
         _isFunctionMode.value = !_isFunctionMode.value
         if (_isFunctionMode.value) {
+            _isComplexMode.value = false
+            _isAdvancedMode.value = true
+        }
+    }
+
+    fun toggleComplexMode() {
+        _isComplexMode.value = !_isComplexMode.value
+        if (_isComplexMode.value) {
+            _isFunctionMode.value = false
             _isAdvancedMode.value = true
         }
     }
@@ -429,6 +451,69 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
                 currentFlow.value = "$current$key"
                 _functionResult.value = ""
             }
+        }
+    }
+
+    private fun handleComplexKeyPress(key: String) {
+        val current = _complexInput.value
+
+        when (key) {
+            "AC" -> {
+                _complexInput.value = ""
+                _complexResult.value = ""
+            }
+            "DEL" -> {
+                if (current.isNotEmpty()) {
+                    _complexInput.value = current.dropLast(1)
+                }
+                _complexResult.value = ""
+            }
+            "=" -> {
+                evaluateComplexExpression()
+            }
+            "i" -> {
+                _complexInput.value = "${current}i"
+                _complexResult.value = ""
+            }
+            else -> {
+                _complexInput.value = "$current$key"
+                _complexResult.value = ""
+            }
+        }
+    }
+
+    fun evaluateComplexExpression() {
+        try {
+            val expr = _complexInput.value
+            if (expr.isEmpty()) return
+            val result = com.example.util.ComplexEvaluator.evaluate(expr)
+            _complexResult.value = "= " + com.example.util.ComplexEvaluator.formatComplex(result)
+        } catch (e: Exception) {
+            _complexResult.value = "Error"
+        }
+    }
+
+    fun evaluateModulus() {
+        try {
+            val expr = _complexInput.value
+            if (expr.isEmpty()) return
+            val c = com.example.util.ComplexEvaluator.evaluate(expr)
+            val result = c.modulus()
+            _complexResult.value = "|z| = " + formatResult(result)
+        } catch (e: Exception) {
+            _complexResult.value = "Error"
+        }
+    }
+
+    fun evaluateConjugate() {
+        try {
+            val expr = _complexInput.value
+            if (expr.isEmpty()) return
+            val c = com.example.util.ComplexEvaluator.evaluate(expr)
+            val result = c.conjugate()
+            _complexResult.value = "z̄ = " + com.example.util.ComplexEvaluator.formatComplex(result)
+        } catch (e: Exception) {
+            _complexResult.value = "Error"
         }
     }
 
