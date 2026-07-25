@@ -89,6 +89,7 @@ class ExampleRobolectricTest {
 
     @Test
     fun `test scientific mode functions`() {
+        viewModel.setMode(com.example.viewmodel.CalculatorMode.NORMAL)
         viewModel.toggleDegrees() // RAD mode
         // sin(pi)
         viewModel.onKeyPress("sin")

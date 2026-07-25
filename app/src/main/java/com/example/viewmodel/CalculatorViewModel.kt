@@ -15,6 +15,8 @@ import kotlinx.coroutines.delay
 import java.text.DecimalFormat
 import kotlin.math.abs
 
+enum class CalculatorMode { NORMAL, FUNCTION, COMPLEX }
+
 data class HistoryItem(
     val id: Long,
     val formula: String,
@@ -46,11 +48,8 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
     private val _previousFormula = MutableStateFlow<String?>(null)
     val previousFormula: StateFlow<String?> = _previousFormula
 
-    private val _isFunctionMode = MutableStateFlow(false)
-    val isFunctionMode: StateFlow<Boolean> = _isFunctionMode
-
-    private val _isComplexMode = MutableStateFlow(false)
-    val isComplexMode: StateFlow<Boolean> = _isComplexMode
+    private val _mode = MutableStateFlow(CalculatorMode.NORMAL)
+    val mode: StateFlow<CalculatorMode> = _mode
 
     private val _complexOperand1 = MutableStateFlow("")
     val complexOperand1: StateFlow<String> = _complexOperand1
@@ -97,13 +96,18 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun onKeyPress(key: String) {
-        if (_isComplexMode.value) {
-            handleComplexKeyPress(key)
-            return
-        }
-        if (_isFunctionMode.value) {
-            handleFunctionKeyPress(key)
-            return
+        when (_mode.value) {
+            CalculatorMode.COMPLEX -> {
+                handleComplexKeyPress(key)
+                return
+            }
+            CalculatorMode.FUNCTION -> {
+                handleFunctionKeyPress(key)
+                return
+            }
+            CalculatorMode.NORMAL -> {
+                // proceed normally
+            }
         }
 
         val current = _formula.value
@@ -399,20 +403,15 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
-    fun toggleFunctionMode() {
-        _isFunctionMode.value = !_isFunctionMode.value
-        if (_isFunctionMode.value) {
-            _isComplexMode.value = false
-            _isAdvancedMode.value = true
-        }
-    }
-
-    fun toggleComplexMode() {
-        _isComplexMode.value = !_isComplexMode.value
-        if (_isComplexMode.value) {
-            _isFunctionMode.value = false
-            _isAdvancedMode.value = true
-            _focusedField.value = 0
+    fun setMode(newMode: CalculatorMode) {
+        if (_mode.value == newMode) {
+            _mode.value = CalculatorMode.NORMAL
+        } else {
+            _mode.value = newMode
+            if (newMode != CalculatorMode.NORMAL) {
+                _isAdvancedMode.value = true
+                _focusedField.value = 0
+            }
         }
     }
 
