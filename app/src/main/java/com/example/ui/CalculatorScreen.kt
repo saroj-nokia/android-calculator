@@ -252,6 +252,28 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
 
                         Spacer(modifier = Modifier.width(10.dp))
 
+                        // Matrix Mode toggle
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(if (mode == CalculatorMode.MATRIX) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant)
+                                .clickable {
+                                    viewModel.setMode(CalculatorMode.MATRIX)
+                                }
+                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                                .testTag("matrix_mode_toggle"),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "▦",
+                                color = if (mode == CalculatorMode.MATRIX) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(10.dp))
+
                         // Advanced Scientific Notation / Functions mode trigger
                         Box(
                             modifier = Modifier
@@ -328,6 +350,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                             val focusedRow by viewModel.focusedMatrixRow.collectAsStateWithLifecycle()
                             val focusedCol by viewModel.focusedMatrixCol.collectAsStateWithLifecycle()
                             val matrixResult by viewModel.matrixResult.collectAsStateWithLifecycle()
+                            val matrixOperator by viewModel.matrixOperator.collectAsStateWithLifecycle()
                             
                             MatrixModeContent(
                                 matrixSize = matrixSize,
@@ -337,8 +360,10 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                                 focusedRow = focusedRow,
                                 focusedCol = focusedCol,
                                 matrixResult = matrixResult,
+                                matrixOperator = matrixOperator,
                                 onSetSize = { viewModel.setMatrixSize(it) },
-                                onFocusCell = { m, r, c -> viewModel.setFocusedMatrixCell(m, r, c) }
+                                onFocusCell = { m, r, c -> viewModel.setFocusedMatrixCell(m, r, c) },
+                                onSetOperator = { viewModel.setMatrixOperator(it) }
                             )
                         }
                     }
@@ -984,8 +1009,10 @@ private fun MatrixModeContent(
     focusedRow: Int,
     focusedCol: Int,
     matrixResult: MatrixResult,
+    matrixOperator: Char,
     onSetSize: (Int) -> Unit,
-    onFocusCell: (Char, Int, Int) -> Unit
+    onFocusCell: (Char, Int, Int) -> Unit,
+    onSetOperator: (Char) -> Unit
 ) {
     val scrollState = rememberScrollState()
     Column(
@@ -1018,6 +1045,37 @@ private fun MatrixModeContent(
                         text = "${size}×${size}",
                         color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+        
+        Spacer(Modifier.height(16.dp))
+        
+        // Operator selector
+        Row(
+            modifier = Modifier
+                .wrapContentWidth()
+                .clip(RoundedCornerShape(20.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            listOf('+', '-', '×').forEach { op ->
+                val isSelected = matrixOperator == op
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
+                        .clickable { onSetOperator(op) }
+                        .padding(horizontal = 24.dp, vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = op.toString(),
+                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -1060,7 +1118,7 @@ private fun MatrixModeContent(
             }
             is MatrixResult.Scalar -> {
                 Text(
-                    text = "= ${com.example.util.Matrix.Companion.formatMatrix(com.example.util.Matrix(2,2, listOf(listOf(matrixResult.value,0.0), listOf(0.0,0.0)))).replace("[[", "").split(",")[0]}", // Quick format hack
+                    text = "= ${com.example.util.Matrix.formatMatrixValue(matrixResult.value)}",
                     color = MaterialTheme.colorScheme.primary,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold
@@ -1088,8 +1146,7 @@ private fun MatrixModeContent(
                         Row {
                             for (j in 0 until matrixResult.value.cols) {
                                 val value = resData[i][j]
-                                val formatted = "%.4f".format(value).trimEnd('0').trimEnd('.')
-                                val finalStr = if (formatted == "-0" || formatted == "") "0" else formatted
+                                val finalStr = com.example.util.Matrix.formatMatrixValue(value)
                                 Text(
                                     text = finalStr,
                                     modifier = Modifier.padding(4.dp).width(50.dp),

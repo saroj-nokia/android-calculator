@@ -710,13 +710,12 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
                 }
             }
             "+", "-" -> {
-                // If it's a minus sign and cell is "0", type minus
-                if (currentCellVal == "0" && key == "-") {
-                    setMatrixCell(_focusedMatrix.value, r, c, "-")
-                } else if (currentCellVal.isEmpty() && key == "-") {
-                    setMatrixCell(_focusedMatrix.value, r, c, "-")
-                } else if (key == "+" || key == "-") {
-                    setMatrixOperator(key[0])
+                if (key == "-") {
+                    if (currentCellVal == "0" || currentCellVal.isEmpty()) {
+                        setMatrixCell(_focusedMatrix.value, r, c, "-")
+                    } else if (!currentCellVal.startsWith("-")) {
+                        setMatrixCell(_focusedMatrix.value, r, c, "-$currentCellVal")
+                    }
                 }
             }
             else -> {

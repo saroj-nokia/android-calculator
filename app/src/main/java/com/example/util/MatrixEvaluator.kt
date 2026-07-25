@@ -152,11 +152,15 @@ data class Matrix(val rows: Int, val cols: Int, val data: List<List<Double>>) {
     }
 
     companion object {
+        fun formatMatrixValue(value: Double): String {
+            val formatted = java.lang.String.format(java.util.Locale.US, "%.4f", value).trimEnd('0').trimEnd('.')
+            return if (formatted == "-0" || formatted.isEmpty()) "0" else formatted
+        }
+
         fun formatMatrix(m: Matrix): String {
             return "[" + m.data.joinToString(", ") { row ->
                 "[" + row.joinToString(", ") { value ->
-                    val formatted = "%.4f".format(value).trimEnd('0').trimEnd('.')
-                    if (formatted == "-0") "0" else formatted
+                    formatMatrixValue(value)
                 } + "]"
             } + "]"
         }
