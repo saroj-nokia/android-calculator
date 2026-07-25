@@ -8,6 +8,10 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.wrapContentWidth
+
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -77,6 +81,7 @@ import android.widget.Toast
 import com.example.ui.theme.*
 import com.example.viewmodel.CalculatorViewModel
 import com.example.viewmodel.CalculatorMode
+import com.example.viewmodel.MatrixResult
 import com.example.viewmodel.HistoryItem
 
 private val standardGrid = listOf(
@@ -313,6 +318,27 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                             NormalModeContent(
                                 formula = formula,
                                 calculationResult = calculationResult
+                            )
+                        }
+                        CalculatorMode.MATRIX -> {
+                            val matrixSize by viewModel.matrixSize.collectAsStateWithLifecycle()
+                            val matrixA by viewModel.matrixA.collectAsStateWithLifecycle()
+                            val matrixB by viewModel.matrixB.collectAsStateWithLifecycle()
+                            val focusedMatrix by viewModel.focusedMatrix.collectAsStateWithLifecycle()
+                            val focusedRow by viewModel.focusedMatrixRow.collectAsStateWithLifecycle()
+                            val focusedCol by viewModel.focusedMatrixCol.collectAsStateWithLifecycle()
+                            val matrixResult by viewModel.matrixResult.collectAsStateWithLifecycle()
+                            
+                            MatrixModeContent(
+                                matrixSize = matrixSize,
+                                matrixA = matrixA,
+                                matrixB = matrixB,
+                                focusedMatrix = focusedMatrix,
+                                focusedRow = focusedRow,
+                                focusedCol = focusedCol,
+                                matrixResult = matrixResult,
+                                onSetSize = { viewModel.setMatrixSize(it) },
+                                onFocusCell = { m, r, c -> viewModel.setFocusedMatrixCell(m, r, c) }
                             )
                         }
                     }
@@ -944,5 +970,191 @@ private fun NormalModeContent(
         )
     } else {
         Spacer(modifier = Modifier.height(32.dp))
+    }
+}
+
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun MatrixModeContent(
+    matrixSize: Int,
+    matrixA: List<List<String>>,
+    matrixB: List<List<String>>,
+    focusedMatrix: Char,
+    focusedRow: Int,
+    focusedCol: Int,
+    matrixResult: MatrixResult,
+    onSetSize: (Int) -> Unit,
+    onFocusCell: (Char, Int, Int) -> Unit
+) {
+    val scrollState = rememberScrollState()
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+            .padding(bottom = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Size selector
+        Row(
+            modifier = Modifier
+                .wrapContentWidth()
+                .clip(RoundedCornerShape(20.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            listOf(2, 3, 4).forEach { size ->
+                val isSelected = matrixSize == size
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
+                        .clickable { onSetSize(size) }
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "${size}×${size}",
+                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+        
+        Spacer(Modifier.height(16.dp))
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            MatrixInputGrid(
+                label = "Matrix A",
+                matrixId = 'A',
+                data = matrixA,
+                size = matrixSize,
+                focusedMatrix = focusedMatrix,
+                focusedRow = focusedRow,
+                focusedCol = focusedCol,
+                onFocusCell = onFocusCell
+            )
+            MatrixInputGrid(
+                label = "Matrix B",
+                matrixId = 'B',
+                data = matrixB,
+                size = matrixSize,
+                focusedMatrix = focusedMatrix,
+                focusedRow = focusedRow,
+                focusedCol = focusedCol,
+                onFocusCell = onFocusCell
+            )
+        }
+        
+        Spacer(Modifier.height(16.dp))
+        
+        when (matrixResult) {
+            is MatrixResult.Empty -> {
+                Spacer(modifier = Modifier.height(32.dp))
+            }
+            is MatrixResult.Scalar -> {
+                Text(
+                    text = "= ${com.example.util.Matrix.Companion.formatMatrix(com.example.util.Matrix(2,2, listOf(listOf(matrixResult.value,0.0), listOf(0.0,0.0)))).replace("[[", "").split(",")[0]}", // Quick format hack
+                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            is MatrixResult.Error -> {
+                Text(
+                    text = matrixResult.message,
+                    color = MaterialTheme.colorScheme.error,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            is MatrixResult.MatrixGrid -> {
+                val resData = matrixResult.value.data
+                Text("Result", color = MaterialTheme.colorScheme.primary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(4.dp))
+                Column(
+                    modifier = Modifier
+                        .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp))
+                        .padding(8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    for (i in 0 until matrixResult.value.rows) {
+                        Row {
+                            for (j in 0 until matrixResult.value.cols) {
+                                val value = resData[i][j]
+                                val formatted = "%.4f".format(value).trimEnd('0').trimEnd('.')
+                                val finalStr = if (formatted == "-0" || formatted == "") "0" else formatted
+                                Text(
+                                    text = finalStr,
+                                    modifier = Modifier.padding(4.dp).width(50.dp),
+                                    textAlign = TextAlign.Center,
+                                    fontSize = 14.sp,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun MatrixInputGrid(
+    label: String,
+    matrixId: Char,
+    data: List<List<String>>,
+    size: Int,
+    focusedMatrix: Char,
+    focusedRow: Int,
+    focusedCol: Int,
+    onFocusCell: (Char, Int, Int) -> Unit
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(text = label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(8.dp))
+        Column(
+            modifier = Modifier
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
+                .padding(8.dp)
+        ) {
+            for (i in 0 until size) {
+                Row {
+                    for (j in 0 until size) {
+                        val isFocused = focusedMatrix == matrixId && focusedRow == i && focusedCol == j
+                        val bgColor = if (isFocused) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
+                        val textColor = if (isFocused) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                        
+                        Box(
+                            modifier = Modifier
+                                .padding(2.dp)
+                                .size(if (size == 4) 36.dp else 48.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(bgColor)
+                                .clickable { onFocusCell(matrixId, i, j) }
+                                .border(if (isFocused) 2.dp else 1.dp, if (isFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(4.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = data[i][j].ifEmpty { "0" },
+                                color = textColor,
+                                fontSize = if (size == 4) 12.sp else 16.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }

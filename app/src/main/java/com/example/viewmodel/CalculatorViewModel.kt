@@ -15,7 +15,7 @@ import kotlinx.coroutines.delay
 import java.text.DecimalFormat
 import kotlin.math.abs
 
-enum class CalculatorMode { NORMAL, FUNCTION, COMPLEX }
+enum class CalculatorMode { NORMAL, FUNCTION, COMPLEX, MATRIX }
 
 data class HistoryItem(
     val id: Long,
@@ -23,6 +23,13 @@ data class HistoryItem(
     val result: String,
     val timestamp: Long = System.currentTimeMillis()
 )
+
+sealed class MatrixResult {
+    object Empty : MatrixResult()
+    data class Scalar(val value: Double) : MatrixResult()
+    data class MatrixGrid(val value: com.example.util.Matrix) : MatrixResult()
+    data class Error(val message: String) : MatrixResult()
+}
 
 class CalculatorViewModel(application: Application) : AndroidViewModel(application) {
     private val sharedPrefs: SharedPreferences = application.getSharedPreferences("calculator_prefs", Context.MODE_PRIVATE)
@@ -75,6 +82,30 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
     private val _functionResult = MutableStateFlow("")
     val functionResult: StateFlow<String> = _functionResult
 
+    private val _matrixSize = MutableStateFlow(2)
+    val matrixSize: StateFlow<Int> = _matrixSize
+
+    private val _matrixA = MutableStateFlow(List(2) { List(2) { "0" } })
+    val matrixA: StateFlow<List<List<String>>> = _matrixA
+
+    private val _matrixB = MutableStateFlow(List(2) { List(2) { "0" } })
+    val matrixB: StateFlow<List<List<String>>> = _matrixB
+
+    private val _focusedMatrix = MutableStateFlow('A')
+    val focusedMatrix: StateFlow<Char> = _focusedMatrix
+
+    private val _focusedMatrixRow = MutableStateFlow(0)
+    val focusedMatrixRow: StateFlow<Int> = _focusedMatrixRow
+
+    private val _focusedMatrixCol = MutableStateFlow(0)
+    val focusedMatrixCol: StateFlow<Int> = _focusedMatrixCol
+
+    private val _matrixOperator = MutableStateFlow('+')
+    val matrixOperator: StateFlow<Char> = _matrixOperator
+
+    private val _matrixResult = MutableStateFlow<MatrixResult>(MatrixResult.Empty)
+    val matrixResult: StateFlow<MatrixResult> = _matrixResult
+
     private val _focusedField = MutableStateFlow(0)
     val focusedField: StateFlow<Int> = _focusedField
 
@@ -97,6 +128,10 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
 
     fun onKeyPress(key: String) {
         when (_mode.value) {
+            CalculatorMode.MATRIX -> {
+                handleMatrixKeyPress(key)
+                return
+            }
             CalculatorMode.COMPLEX -> {
                 handleComplexKeyPress(key)
                 return
@@ -609,6 +644,149 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
             _functionResult.value = "∫f(x)dx ≈ " + formatResult(result)
         } catch (e: Exception) {
             _functionResult.value = "Error"
+        }
+    }
+
+    fun setMatrixCell(matrix: Char, row: Int, col: Int, value: String) {
+        val targetFlow = if (matrix == 'A') _matrixA else _matrixB
+        val currentList = targetFlow.value
+        val newList = currentList.toMutableList()
+        val newRow = newList[row].toMutableList()
+        newRow[col] = value
+        newList[row] = newRow
+        targetFlow.value = newList
+        _matrixResult.value = MatrixResult.Empty
+    }
+
+    fun setMatrixSize(size: Int) {
+        if (size in 2..4) {
+            _matrixSize.value = size
+            _matrixA.value = List(size) { List(size) { "0" } }
+            _matrixB.value = List(size) { List(size) { "0" } }
+            _focusedMatrixRow.value = 0
+            _focusedMatrixCol.value = 0
+            _matrixResult.value = MatrixResult.Empty
+        }
+    }
+
+    fun setFocusedMatrixCell(matrix: Char, row: Int, col: Int) {
+        _focusedMatrix.value = matrix
+        _focusedMatrixRow.value = row
+        _focusedMatrixCol.value = col
+    }
+
+    fun setMatrixOperator(op: Char) {
+        _matrixOperator.value = op
+        _matrixResult.value = MatrixResult.Empty
+    }
+
+    private fun handleMatrixKeyPress(key: String) {
+        val targetFlow = if (_focusedMatrix.value == 'A') _matrixA else _matrixB
+        val currentList = targetFlow.value
+        val r = _focusedMatrixRow.value
+        val c = _focusedMatrixCol.value
+        val currentCellVal = currentList[r][c]
+
+        when (key) {
+            "AC" -> {
+                setMatrixCell(_focusedMatrix.value, r, c, "0")
+            }
+            "DEL" -> {
+                if (currentCellVal.length > 1) {
+                    setMatrixCell(_focusedMatrix.value, r, c, currentCellVal.dropLast(1))
+                } else {
+                    setMatrixCell(_focusedMatrix.value, r, c, "0")
+                }
+            }
+            "=" -> {
+                evaluateMatrixBinaryOp()
+            }
+            "×", "÷", "*", "/" -> {
+                val op = if (key == "×" || key == "*") '×' else '÷'
+                if (op == '×') {
+                    setMatrixOperator('×')
+                } else {
+                    // Ignore division
+                }
+            }
+            "+", "-" -> {
+                // If it's a minus sign and cell is "0", type minus
+                if (currentCellVal == "0" && key == "-") {
+                    setMatrixCell(_focusedMatrix.value, r, c, "-")
+                } else if (currentCellVal.isEmpty() && key == "-") {
+                    setMatrixCell(_focusedMatrix.value, r, c, "-")
+                } else if (key == "+" || key == "-") {
+                    setMatrixOperator(key[0])
+                }
+            }
+            else -> {
+                if (currentCellVal == "0" && key != ".") {
+                    setMatrixCell(_focusedMatrix.value, r, c, key)
+                } else if (currentCellVal == "-" && key == ".") {
+                    setMatrixCell(_focusedMatrix.value, r, c, "-0.")
+                } else {
+                    setMatrixCell(_focusedMatrix.value, r, c, "$currentCellVal$key")
+                }
+            }
+        }
+    }
+
+    private fun parseMatrix(strMatrix: List<List<String>>): com.example.util.Matrix {
+        val doubleList = strMatrix.map { row ->
+            row.map { cell ->
+                if (cell == "-" || cell == "-0" || cell.isEmpty()) 0.0
+                else cell.toDoubleOrNull() ?: throw IllegalArgumentException("Invalid cell value")
+            }
+        }
+        return com.example.util.Matrix(_matrixSize.value, _matrixSize.value, doubleList)
+    }
+
+    fun evaluateMatrixBinaryOp() {
+        try {
+            val mA = parseMatrix(_matrixA.value)
+            val mB = parseMatrix(_matrixB.value)
+            val res = when (_matrixOperator.value) {
+                '+' -> mA + mB
+                '-' -> mA - mB
+                '×', '*' -> mA * mB
+                else -> throw IllegalArgumentException("Unknown operator")
+            }
+            _matrixResult.value = MatrixResult.MatrixGrid(res)
+        } catch (e: Exception) {
+            _matrixResult.value = MatrixResult.Error("Error")
+        }
+    }
+
+    fun evaluateMatrixDeterminant() {
+        try {
+            val targetStr = if (_focusedMatrix.value == 'A') _matrixA.value else _matrixB.value
+            val m = parseMatrix(targetStr)
+            val res = m.determinant()
+            _matrixResult.value = MatrixResult.Scalar(res)
+        } catch (e: Exception) {
+            _matrixResult.value = MatrixResult.Error("Error")
+        }
+    }
+
+    fun evaluateMatrixTranspose() {
+        try {
+            val targetStr = if (_focusedMatrix.value == 'A') _matrixA.value else _matrixB.value
+            val m = parseMatrix(targetStr)
+            val res = m.transpose()
+            _matrixResult.value = MatrixResult.MatrixGrid(res)
+        } catch (e: Exception) {
+            _matrixResult.value = MatrixResult.Error("Error")
+        }
+    }
+
+    fun evaluateMatrixInverse() {
+        try {
+            val targetStr = if (_focusedMatrix.value == 'A') _matrixA.value else _matrixB.value
+            val m = parseMatrix(targetStr)
+            val res = m.inverse()
+            _matrixResult.value = MatrixResult.MatrixGrid(res)
+        } catch (e: Exception) {
+            _matrixResult.value = MatrixResult.Error("Singular")
         }
     }
 }
