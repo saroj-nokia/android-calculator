@@ -157,8 +157,9 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
         ) {
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .widthIn(max = 480.dp),
+                    .widthIn(max = 480.dp)
+                    .fillMaxWidth()
+                    .fillMaxHeight(),
                 verticalArrangement = Arrangement.Bottom
             ) {
                 // 1. Top Bar Options Toolbar
@@ -976,7 +977,7 @@ private fun ComplexModeContent(
                     onClick = {},
                     onLongClick = {
                         coroutineScope.launch {
-                            clipboardManager.setClipEntry(ClipEntry(androidx.compose.ui.platform.ClipEntry(android.content.ClipData.newPlainText("Result", complexResult.substringAfter("= "))).clipData))
+                            clipboardManager.setClipEntry(ClipEntry(android.content.ClipData.newPlainText("Result", complexResult.substringAfter("= "))))
                             Toast.makeText(context, "Result copied", Toast.LENGTH_SHORT).show()
                         }
                     }
@@ -1061,7 +1062,7 @@ private fun FunctionModeContent(
                     onClick = {},
                     onLongClick = {
                         coroutineScope.launch {
-                            clipboardManager.setClipEntry(ClipEntry(androidx.compose.ui.platform.ClipEntry(android.content.ClipData.newPlainText("Result", functionResult)).clipData))
+                            clipboardManager.setClipEntry(ClipEntry(android.content.ClipData.newPlainText("Result", functionResult)))
                             Toast.makeText(context, "Result copied", Toast.LENGTH_SHORT).show()
                         }
                     }
@@ -1121,7 +1122,7 @@ private fun NormalModeContent(
                     onClick = {},
                     onLongClick = {
                         coroutineScope.launch {
-                            clipboardManager.setClipEntry(ClipEntry(androidx.compose.ui.platform.ClipEntry(android.content.ClipData.newPlainText("Result", calculationResult.removePrefix("= "))).clipData))
+                            clipboardManager.setClipEntry(ClipEntry(android.content.ClipData.newPlainText("Result", calculationResult.removePrefix("= "))))
                             Toast.makeText(context, "Result copied", Toast.LENGTH_SHORT).show()
                         }
                     }
