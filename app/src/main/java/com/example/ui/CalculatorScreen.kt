@@ -686,7 +686,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.SemiBold,
                                         modifier = Modifier
-                                            .clickable {
+                                            .pressScaledClickable {
                                                 viewModel.clearHistory()
                                             }
                                             .padding(4.dp)
@@ -797,33 +797,13 @@ fun CalculatorKeyButton(
         }
     }
 
-    val interactionSource = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val scale by androidx.compose.animation.core.animateFloatAsState(
-        targetValue = if (isPressed) 0.92f else 1f,
-        animationSpec = androidx.compose.animation.core.tween(100),
-        label = "keyPressScale"
-    )
-    val rippleColor = if (buttonBk.luminance() > 0.5f) {
-        androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.25f)
-    } else {
-        androidx.compose.ui.graphics.Color.White.copy(alpha = 0.25f)
-    }
-
     Box(
         modifier = modifier
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            }
             .height(58.dp)
             .clip(RoundedCornerShape(28.dp))
             .background(buttonBk)
             .then(borderModifier)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = androidx.compose.material3.ripple(color = rippleColor)
-            ) {
+            .pressScaledClickable(backgroundColor = buttonBk) {
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 onClick()
             }
@@ -923,7 +903,7 @@ private fun ComplexModeContent(
     val unselectedColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
 
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text("Op 1 =", fontSize = 24.sp, color = if (focusedField == 0) selectedColor else unselectedColor, modifier = Modifier.clickable { onSetFocusedField(0) })
+        Text("Op 1 =", fontSize = 24.sp, color = if (focusedField == 0) selectedColor else unselectedColor, modifier = Modifier.pressScaledClickable { onSetFocusedField(0) })
         Spacer(Modifier.width(8.dp))
         Text(
             text = complexOperand1.ifEmpty { "..." },
@@ -931,7 +911,7 @@ private fun ComplexModeContent(
             fontSize = 24.sp,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.clickable { onSetFocusedField(0) }.weight(1f),
+            modifier = Modifier.pressScaledClickable { onSetFocusedField(0) }.weight(1f),
             textAlign = TextAlign.End
         )
     }
@@ -945,7 +925,7 @@ private fun ComplexModeContent(
     }
     Spacer(Modifier.height(8.dp))
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text("Op 2 =", fontSize = 24.sp, color = if (focusedField == 1) selectedColor else unselectedColor, modifier = Modifier.clickable { onSetFocusedField(1) })
+        Text("Op 2 =", fontSize = 24.sp, color = if (focusedField == 1) selectedColor else unselectedColor, modifier = Modifier.pressScaledClickable { onSetFocusedField(1) })
         Spacer(Modifier.width(8.dp))
         Text(
             text = complexOperand2.ifEmpty { "..." },
@@ -953,7 +933,7 @@ private fun ComplexModeContent(
             fontSize = 24.sp,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.clickable { onSetFocusedField(1) }.weight(1f),
+            modifier = Modifier.pressScaledClickable { onSetFocusedField(1) }.weight(1f),
             textAlign = TextAlign.End
         )
     }
@@ -1003,7 +983,7 @@ private fun FunctionModeContent(
     val unselectedColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
 
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text("f(x) =", fontSize = 24.sp, color = if (focusedField == 0) selectedColor else unselectedColor, modifier = Modifier.clickable { onSetFocusedField(0) })
+        Text("f(x) =", fontSize = 24.sp, color = if (focusedField == 0) selectedColor else unselectedColor, modifier = Modifier.pressScaledClickable { onSetFocusedField(0) })
         Spacer(Modifier.width(8.dp))
         Text(
             text = functionFormula.ifEmpty { "..." },
@@ -1011,13 +991,13 @@ private fun FunctionModeContent(
             fontSize = 24.sp,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.clickable { onSetFocusedField(0) }.weight(1f),
+            modifier = Modifier.pressScaledClickable { onSetFocusedField(0) }.weight(1f),
             textAlign = TextAlign.End
         )
     }
     Spacer(Modifier.height(8.dp))
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text("a =", fontSize = 24.sp, color = if (focusedField == 1) selectedColor else unselectedColor, modifier = Modifier.clickable { onSetFocusedField(1) })
+        Text("a =", fontSize = 24.sp, color = if (focusedField == 1) selectedColor else unselectedColor, modifier = Modifier.pressScaledClickable { onSetFocusedField(1) })
         Spacer(Modifier.width(8.dp))
         Text(
             text = functionPoint.ifEmpty { "..." },
@@ -1025,13 +1005,13 @@ private fun FunctionModeContent(
             fontSize = 24.sp,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.clickable { onSetFocusedField(1) }.weight(1f),
+            modifier = Modifier.pressScaledClickable { onSetFocusedField(1) }.weight(1f),
             textAlign = TextAlign.End
         )
     }
     Spacer(Modifier.height(8.dp))
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text("b =", fontSize = 24.sp, color = if (focusedField == 2) selectedColor else unselectedColor, modifier = Modifier.clickable { onSetFocusedField(2) })
+        Text("b =", fontSize = 24.sp, color = if (focusedField == 2) selectedColor else unselectedColor, modifier = Modifier.pressScaledClickable { onSetFocusedField(2) })
         Spacer(Modifier.width(8.dp))
         Text(
             text = functionPointB.ifEmpty { "..." },
@@ -1039,7 +1019,7 @@ private fun FunctionModeContent(
             fontSize = 24.sp,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.clickable { onSetFocusedField(2) }.weight(1f),
+            modifier = Modifier.pressScaledClickable { onSetFocusedField(2) }.weight(1f),
             textAlign = TextAlign.End
         )
     }
@@ -1461,7 +1441,7 @@ private fun StatsModeContent(
         } else {
             Row(modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp)) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("X", fontWeight = FontWeight.Bold, color = if (regressionFocus == 'X') MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface, modifier = Modifier.clickable { onSetRegressionFocus('X') }.fillMaxWidth().padding(8.dp))
+                    Text("X", fontWeight = FontWeight.Bold, color = if (regressionFocus == 'X') MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface, modifier = Modifier.pressScaledClickable { onSetRegressionFocus('X') }.fillMaxWidth().padding(8.dp))
                     LazyColumn {
                         itemsIndexed(datasetX) { index, item ->
                             Row(
@@ -1479,7 +1459,7 @@ private fun StatsModeContent(
                 }
                 Spacer(Modifier.width(8.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Y", fontWeight = FontWeight.Bold, color = if (regressionFocus == 'Y') MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface, modifier = Modifier.clickable { onSetRegressionFocus('Y') }.fillMaxWidth().padding(8.dp))
+                    Text("Y", fontWeight = FontWeight.Bold, color = if (regressionFocus == 'Y') MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface, modifier = Modifier.pressScaledClickable { onSetRegressionFocus('Y') }.fillMaxWidth().padding(8.dp))
                     LazyColumn {
                         itemsIndexed(datasetY) { index, item ->
                             Row(
@@ -1537,7 +1517,7 @@ private fun StatsModeContent(
 
 @Composable
 fun Modifier.pressScaledClickable(
-    backgroundColor: androidx.compose.ui.graphics.Color,
+    backgroundColor: androidx.compose.ui.graphics.Color = androidx.compose.material3.MaterialTheme.colorScheme.surface,
     onClick: () -> Unit
 ): Modifier {
     val interactionSource = androidx.compose.runtime.remember { MutableInteractionSource() }
