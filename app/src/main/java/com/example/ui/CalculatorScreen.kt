@@ -43,6 +43,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -54,6 +55,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Button
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.rememberSwipeToDismissBoxState
@@ -212,111 +215,93 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
 
                         Spacer(modifier = Modifier.width(10.dp))
 
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(if (mode == CalculatorMode.FUNCTION) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant)
-                                .clickable {
-                                    viewModel.setMode(CalculatorMode.FUNCTION)
-                                }
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
-                                .testTag("function_mode_toggle"),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "f(x)",
-                                color = if (mode == CalculatorMode.FUNCTION) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(10.dp))
-
-                        // Complex Mode toggle
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(if (mode == CalculatorMode.COMPLEX) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant)
-                                .clickable {
-                                    viewModel.setMode(CalculatorMode.COMPLEX)
-                                }
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
-                                .testTag("complex_mode_toggle"),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "ℂ",
-                                color = if (mode == CalculatorMode.COMPLEX) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(10.dp))
-
-                        // Matrix Mode toggle
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(if (mode == CalculatorMode.MATRIX) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant)
-                                .clickable {
-                                    viewModel.setMode(CalculatorMode.MATRIX)
-                                }
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
-                                .testTag("matrix_mode_toggle"),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "▦",
-                                color = if (mode == CalculatorMode.MATRIX) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
+                        var modeMenuExpanded by remember { mutableStateOf(false) }
                         
-                        Spacer(modifier = Modifier.width(10.dp))
-
-                        // Stats Mode toggle
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(if (mode == CalculatorMode.STATS) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant)
-                                .clickable {
-                                    viewModel.setMode(CalculatorMode.STATS)
+                        Box {
+                            Row(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
+                                    .clickable { modeMenuExpanded = true }
+                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                                    .testTag("mode_selector_button"),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                val modeLabel = when (mode) {
+                                    CalculatorMode.NORMAL -> "Normal"
+                                    CalculatorMode.FUNCTION -> "f(x)"
+                                    CalculatorMode.COMPLEX -> "ℂ"
+                                    CalculatorMode.MATRIX -> "▦"
+                                    CalculatorMode.STATS -> "Σ"
                                 }
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
-                                .testTag("stats_mode_toggle"),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "Σ",
-                                color = if (mode == CalculatorMode.STATS) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
+                                Text(
+                                    text = modeLabel,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Icon(
+                                    imageVector = androidx.compose.material.icons.Icons.Default.ArrowDropDown,
+                                    contentDescription = "Select Mode",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                            
+                            DropdownMenu(
+                                expanded = modeMenuExpanded,
+                                onDismissRequest = { modeMenuExpanded = false }
+                            ) {
+                                val modes = listOf(
+                                    CalculatorMode.NORMAL to "Normal",
+                                    CalculatorMode.FUNCTION to "Function f(x)",
+                                    CalculatorMode.COMPLEX to "Complex",
+                                    CalculatorMode.MATRIX to "Matrix",
+                                    CalculatorMode.STATS to "Statistics"
+                                )
+                                val tags = listOf(
+                                    "mode_menu_item_normal",
+                                    "mode_menu_item_function",
+                                    "mode_menu_item_complex",
+                                    "mode_menu_item_matrix",
+                                    "mode_menu_item_stats"
+                                )
+                                modes.forEachIndexed { index, (m, label) ->
+                                    DropdownMenuItem(
+                                        text = { Text(label) },
+                                        onClick = {
+                                            viewModel.setMode(m)
+                                            modeMenuExpanded = false
+                                        },
+                                        modifier = Modifier.testTag(tags[index])
+                                    )
+                                }
+                            }
                         }
-                        
-                        Spacer(modifier = Modifier.width(10.dp))
 
-                        // Advanced Scientific Notation / Functions mode trigger
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(if (isAdvancedMode) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant)
-                                .clickable {
-                                    viewModel.toggleAdvancedMode()
-                                }
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
-                                .testTag("advanced_mode_toggle"),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "SCIENTIFIC",
-                                color = if (isAdvancedMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
+                        if (mode != CalculatorMode.MATRIX && mode != CalculatorMode.STATS) {
+                            Spacer(modifier = Modifier.width(10.dp))
+                            
+                            // Advanced Scientific Notation / Functions mode trigger
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(if (isAdvancedMode) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant)
+                                    .clickable {
+                                        viewModel.toggleAdvancedMode()
+                                    }
+                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                                    .testTag("advanced_mode_toggle"),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "SCI",
+                                    color = if (isAdvancedMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                     }
                 }
@@ -441,7 +426,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                 ) {
                     // Scientific Operations Drawer Panel (with beautiful reveal animation)
                     AnimatedVisibility(
-                        visible = isAdvancedMode,
+                        visible = isAdvancedMode && mode != CalculatorMode.MATRIX && mode != CalculatorMode.STATS,
                         enter = expandVertically(animationSpec = tween(250)) + fadeIn(),
                         exit = shrinkVertically(animationSpec = tween(220)) + fadeOut()
                     ) {
@@ -449,60 +434,91 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                             modifier = Modifier.padding(bottom = 12.dp)
                         ) {
-                            // Row M Memory & Combinatorics
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                CalculatorKeyButton("MC", "key_mc", modifier = Modifier.weight(1f), isSci = true) { viewModel.onMemoryClear() }
-                                CalculatorKeyButton("MR", "key_mr", modifier = Modifier.weight(1f), isSci = true) { viewModel.onMemoryRecall() }
-                                CalculatorKeyButton("M+", "key_m_plus", modifier = Modifier.weight(1f), isSci = true) { viewModel.onMemoryAdd() }
-                                CalculatorKeyButton("M-", "key_m_minus", modifier = Modifier.weight(1f), isSci = true) { viewModel.onMemorySubtract() }
-                            }
-                            // Row 0 Advanced Functions
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                val previousFormula by viewModel.previousFormula.collectAsStateWithLifecycle()
-                                val undoEnabled = previousFormula != null
-                                val undoLabel = "UNDO"
-                                
-                                CalculatorKeyButton("nPr", "key_npr", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("nPr") }
-                                CalculatorKeyButton("nCr", "key_ncr", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("nCr") }
-                                CalculatorKeyButton("x", "key_x_var", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("x") }
-                                CalculatorKeyButton("i", "key_i_var", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("i") }
-                                CalculatorKeyButton(undoLabel, "key_undo", modifier = Modifier.weight(1f).alpha(if (undoEnabled) 1f else 0.4f), isSci = true) { if (undoEnabled) viewModel.onUndo() }
-                            }
-                            // Row 1 Advanced Functions
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                CalculatorKeyButton("sin", "key_sin", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("sin") }
-                                CalculatorKeyButton("cos", "key_cos", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("cos") }
-                                CalculatorKeyButton("tan", "key_tan", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("tan") }
-                                CalculatorKeyButton("π", "key_pi", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("pi") }
-                            }
-                            // Row 2 Advanced Functions
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                CalculatorKeyButton("ln", "key_ln", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("ln") }
-                                CalculatorKeyButton("log", "key_log", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("log") }
-                                CalculatorKeyButton("^", "key_power", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("^") }
-                                CalculatorKeyButton("e", "key_ee", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("EE") }
-                            }
-                            // Row 3 Advanced Functions
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                CalculatorKeyButton("√", "key_sqrt", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("sqrt") }
-                                CalculatorKeyButton("x!", "key_factorial", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("x!") }
-                                CalculatorKeyButton("(", "key_open_paren", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("(") }
-                                CalculatorKeyButton(")", "key_close_paren", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress(")") }
+                            if (mode == CalculatorMode.NORMAL) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    CalculatorKeyButton("MC", "key_mc", modifier = Modifier.weight(1f), isSci = true) { viewModel.onMemoryClear() }
+                                    CalculatorKeyButton("MR", "key_mr", modifier = Modifier.weight(1f), isSci = true) { viewModel.onMemoryRecall() }
+                                    CalculatorKeyButton("M+", "key_m_plus", modifier = Modifier.weight(1f), isSci = true) { viewModel.onMemoryAdd() }
+                                    CalculatorKeyButton("M-", "key_m_minus", modifier = Modifier.weight(1f), isSci = true) { viewModel.onMemorySubtract() }
+                                    val previousFormula by viewModel.previousFormula.collectAsStateWithLifecycle()
+                                    val undoEnabled = previousFormula != null
+                                    CalculatorKeyButton("UNDO", "key_undo", modifier = Modifier.weight(1f).alpha(if (undoEnabled) 1f else 0.4f), isSci = true) { if (undoEnabled) viewModel.onUndo() }
+                                }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    CalculatorKeyButton("sin", "key_sin", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("sin") }
+                                    CalculatorKeyButton("cos", "key_cos", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("cos") }
+                                    CalculatorKeyButton("tan", "key_tan", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("tan") }
+                                    CalculatorKeyButton("asin", "key_asin", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("asin") }
+                                    CalculatorKeyButton("acos", "key_acos", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("acos") }
+                                    CalculatorKeyButton("atan", "key_atan", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("atan") }
+                                }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    CalculatorKeyButton("ln", "key_ln", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("ln") }
+                                    CalculatorKeyButton("log", "key_log", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("log") }
+                                    CalculatorKeyButton("^", "key_power", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("^") }
+                                    CalculatorKeyButton("e", "key_ee", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("EE") }
+                                    CalculatorKeyButton("π", "key_pi", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("pi") }
+                                }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    CalculatorKeyButton("√", "key_sqrt", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("sqrt") }
+                                    CalculatorKeyButton("x!", "key_factorial", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("x!") }
+                                    CalculatorKeyButton("(", "key_open_paren", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("(") }
+                                    CalculatorKeyButton(")", "key_close_paren", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress(")") }
+                                    CalculatorKeyButton("nPr", "key_npr", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("nPr") }
+                                    CalculatorKeyButton("nCr", "key_ncr", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("nCr") }
+                                }
+                            } else if (mode == CalculatorMode.FUNCTION) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    CalculatorKeyButton("sin", "key_sin", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("sin") }
+                                    CalculatorKeyButton("cos", "key_cos", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("cos") }
+                                    CalculatorKeyButton("tan", "key_tan", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("tan") }
+                                    CalculatorKeyButton("asin", "key_asin", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("asin") }
+                                    CalculatorKeyButton("acos", "key_acos", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("acos") }
+                                    CalculatorKeyButton("atan", "key_atan", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("atan") }
+                                }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    CalculatorKeyButton("ln", "key_ln", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("ln") }
+                                    CalculatorKeyButton("log", "key_log", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("log") }
+                                    CalculatorKeyButton("^", "key_power", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("^") }
+                                    CalculatorKeyButton("e", "key_ee", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("EE") }
+                                    CalculatorKeyButton("π", "key_pi", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("pi") }
+                                }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    CalculatorKeyButton("√", "key_sqrt", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("sqrt") }
+                                    CalculatorKeyButton("x", "key_x_var", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("x") }
+                                    CalculatorKeyButton("(", "key_open_paren", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("(") }
+                                    CalculatorKeyButton(")", "key_close_paren", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress(")") }
+                                }
+                            } else if (mode == CalculatorMode.COMPLEX) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    CalculatorKeyButton("i", "key_i_var", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("i") }
+                                    CalculatorKeyButton("(", "key_open_paren", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress("(") }
+                                    CalculatorKeyButton(")", "key_close_paren", modifier = Modifier.weight(1f), isSci = true) { viewModel.onKeyPress(")") }
+                                }
                             }
                         }
                     }
