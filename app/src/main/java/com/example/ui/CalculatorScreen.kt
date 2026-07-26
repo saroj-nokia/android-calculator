@@ -8,6 +8,10 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material3.ripple
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -844,15 +848,15 @@ fun CalculatorKeyButton(
 @Composable
 fun HistoryRowItem(item: HistoryItem, onSelect: () -> Unit, onDelete: () -> Unit) {
     val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = {
-            if (it == SwipeToDismissBoxValue.EndToStart || it == SwipeToDismissBoxValue.StartToEnd) {
-                onDelete()
-                true
-            } else {
-                false
-            }
-        }
+        positionalThreshold = { distance -> distance * 0.5f }
     )
+
+    LaunchedEffect(dismissState.currentValue) {
+        if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart || dismissState.currentValue == SwipeToDismissBoxValue.StartToEnd) {
+            onDelete()
+            dismissState.snapTo(SwipeToDismissBoxValue.Settled)
+        }
+    }
 
     SwipeToDismissBox(
         state = dismissState,
@@ -955,8 +959,9 @@ private fun ComplexModeContent(
     
     Spacer(Modifier.height(16.dp))
     if (complexResult.isNotEmpty()) {
-        val clipboardManager = LocalClipboardManager.current
+        val clipboardManager = androidx.compose.ui.platform.LocalClipboard.current
         val context = LocalContext.current
+        val coroutineScope = rememberCoroutineScope()
         
         Text(
             text = complexResult,
@@ -970,8 +975,10 @@ private fun ComplexModeContent(
                 .combinedClickable(
                     onClick = {},
                     onLongClick = {
-                        clipboardManager.setText(AnnotatedString(complexResult.substringAfter("= ")))
-                        Toast.makeText(context, "Result copied", Toast.LENGTH_SHORT).show()
+                        coroutineScope.launch {
+                            clipboardManager.setClipEntry(ClipEntry(androidx.compose.ui.platform.ClipEntry(android.content.ClipData.newPlainText("Result", complexResult.substringAfter("= "))).clipData))
+                            Toast.makeText(context, "Result copied", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 )
                 .testTag("complex_result_display")
@@ -1038,8 +1045,9 @@ private fun FunctionModeContent(
     
     Spacer(Modifier.height(16.dp))
     if (functionResult.isNotEmpty()) {
-        val clipboardManager = LocalClipboardManager.current
+        val clipboardManager = androidx.compose.ui.platform.LocalClipboard.current
         val context = LocalContext.current
+        val coroutineScope = rememberCoroutineScope()
         Text(
             text = functionResult,
             color = MaterialTheme.colorScheme.onBackground,
@@ -1052,8 +1060,10 @@ private fun FunctionModeContent(
                 .combinedClickable(
                     onClick = {},
                     onLongClick = {
-                        clipboardManager.setText(AnnotatedString(functionResult))
-                        Toast.makeText(context, "Result copied", Toast.LENGTH_SHORT).show()
+                        coroutineScope.launch {
+                            clipboardManager.setClipEntry(ClipEntry(androidx.compose.ui.platform.ClipEntry(android.content.ClipData.newPlainText("Result", functionResult)).clipData))
+                            Toast.makeText(context, "Result copied", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 )
         )
@@ -1094,8 +1104,9 @@ private fun NormalModeContent(
     Spacer(modifier = Modifier.height(10.dp))
 
     if (calculationResult.isNotEmpty()) {
-        val clipboardManager = LocalClipboardManager.current
+        val clipboardManager = androidx.compose.ui.platform.LocalClipboard.current
         val context = LocalContext.current
+        val coroutineScope = rememberCoroutineScope()
         
         Text(
             text = calculationResult,
@@ -1109,8 +1120,10 @@ private fun NormalModeContent(
                 .combinedClickable(
                     onClick = {},
                     onLongClick = {
-                        clipboardManager.setText(AnnotatedString(calculationResult.removePrefix("= ")))
-                        Toast.makeText(context, "Result copied", Toast.LENGTH_SHORT).show()
+                        coroutineScope.launch {
+                            clipboardManager.setClipEntry(ClipEntry(androidx.compose.ui.platform.ClipEntry(android.content.ClipData.newPlainText("Result", calculationResult.removePrefix("= "))).clipData))
+                            Toast.makeText(context, "Result copied", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 )
                 .testTag("result_display")
@@ -1440,7 +1453,7 @@ private fun StatsModeContent(
                         }
                     }
                     if (index < dataset.lastIndex) {
-                        androidx.compose.material3.Divider()
+                        androidx.compose.material3.HorizontalDivider()
                     }
                 }
             }
