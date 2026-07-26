@@ -1,7 +1,13 @@
 package com.example.ui
 
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.material3.ripple
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -164,7 +170,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant)
-                            .clickable {
+                            .pressScaledClickable(backgroundColor = MaterialTheme.colorScheme.surfaceVariant) {
                                 showHistoryDialog = !showHistoryDialog
                             }
                             .padding(horizontal = 12.dp, vertical = 6.dp)
@@ -198,7 +204,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                             modifier = Modifier
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(MaterialTheme.colorScheme.surfaceVariant)
-                                .clickable {
+                                .pressScaledClickable(backgroundColor = MaterialTheme.colorScheme.surfaceVariant) {
                                     viewModel.toggleDegrees()
                                 }
                                 .padding(horizontal = 12.dp, vertical = 6.dp)
@@ -222,7 +228,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(12.dp))
                                     .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
-                                    .clickable { modeMenuExpanded = true }
+                                    .pressScaledClickable(backgroundColor = MaterialTheme.colorScheme.surfaceVariant) { modeMenuExpanded = true }
                                     .padding(horizontal = 12.dp, vertical = 6.dp)
                                     .testTag("mode_selector_button"),
                                 verticalAlignment = Alignment.CenterVertically
@@ -288,7 +294,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(12.dp))
                                     .background(if (isAdvancedMode) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant)
-                                    .clickable {
+                                    .pressScaledClickable(backgroundColor = if (isAdvancedMode) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surfaceVariant) {
                                         viewModel.toggleAdvancedMode()
                                     }
                                     .padding(horizontal = 12.dp, vertical = 6.dp)
@@ -564,7 +570,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                                             .weight(1f)
                                             .clip(RoundedCornerShape(24.dp))
                                             .background(if (op == o) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent)
-                                            .clickable { viewModel.setComplexOperator(o) }
+                                            .pressScaledClickable(backgroundColor = if (op == o) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant) { viewModel.setComplexOperator(o) }
                                             .padding(vertical = 12.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
@@ -728,7 +734,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(14.dp))
                                     .background(MaterialTheme.colorScheme.secondaryContainer)
-                                    .clickable {
+                                    .pressScaledClickable(backgroundColor = MaterialTheme.colorScheme.secondaryContainer) {
                                         showHistoryDialog = false
                                     }
                                     .padding(vertical = 14.dp),
@@ -786,13 +792,33 @@ fun CalculatorKeyButton(
         }
     }
 
+    val interactionSource = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (isPressed) 0.92f else 1f,
+        animationSpec = androidx.compose.animation.core.tween(100),
+        label = "keyPressScale"
+    )
+    val rippleColor = if (buttonBk.luminance() > 0.5f) {
+        androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.25f)
+    } else {
+        androidx.compose.ui.graphics.Color.White.copy(alpha = 0.25f)
+    }
+
     Box(
         modifier = modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
             .height(58.dp)
             .clip(RoundedCornerShape(28.dp))
             .background(buttonBk)
             .then(borderModifier)
-            .clickable {
+            .clickable(
+                interactionSource = interactionSource,
+                indication = androidx.compose.material3.ripple(color = rippleColor)
+            ) {
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 onClick()
             }
@@ -852,7 +878,7 @@ fun HistoryRowItem(item: HistoryItem, onSelect: () -> Unit, onDelete: () -> Unit
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
                 .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
-                .clickable { onSelect() }
+                .pressScaledClickable(backgroundColor = MaterialTheme.colorScheme.surface) { onSelect() }
                 .padding(16.dp),
             horizontalAlignment = Alignment.End
         ) {
@@ -1133,7 +1159,7 @@ private fun MatrixModeContent(
                     modifier = Modifier
                         .clip(RoundedCornerShape(16.dp))
                         .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
-                        .clickable { onSetSize(size) }
+                        .pressScaledClickable(backgroundColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant) { onSetSize(size) }
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -1164,7 +1190,7 @@ private fun MatrixModeContent(
                     modifier = Modifier
                         .clip(RoundedCornerShape(16.dp))
                         .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
-                        .clickable { onSetOperator(op) }
+                        .pressScaledClickable(backgroundColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant) { onSetOperator(op) }
                         .padding(horizontal = 24.dp, vertical = 8.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -1293,7 +1319,7 @@ fun MatrixInputGrid(
                                 .size(if (size == 4) 36.dp else 48.dp)
                                 .clip(RoundedCornerShape(4.dp))
                                 .background(bgColor)
-                                .clickable { onFocusCell(matrixId, i, j) }
+                                .pressScaledClickable(backgroundColor = bgColor) { onFocusCell(matrixId, i, j) }
                                 .border(if (isFocused) 2.dp else 1.dp, if (isFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(4.dp)),
                             contentAlignment = Alignment.Center
                         ) {
@@ -1357,7 +1383,7 @@ private fun StatsModeContent(
                     modifier = Modifier
                         .clip(RoundedCornerShape(16.dp))
                         .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
-                        .clickable { onSetSubMode(m) }
+                        .pressScaledClickable(backgroundColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant) { onSetSubMode(m) }
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -1492,4 +1518,35 @@ private fun StatsModeContent(
             }
         }
     }
+}
+
+
+@Composable
+fun Modifier.pressScaledClickable(
+    backgroundColor: androidx.compose.ui.graphics.Color,
+    onClick: () -> Unit
+): Modifier {
+    val interactionSource = androidx.compose.runtime.remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.92f else 1f,
+        animationSpec = tween(100),
+        label = "keyPressScale"
+    )
+    val rippleColor = if (backgroundColor.luminance() > 0.5f) {
+        androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.25f)
+    } else {
+        androidx.compose.ui.graphics.Color.White.copy(alpha = 0.25f)
+    }
+    
+    return this
+        .graphicsLayer {
+            scaleX = scale
+            scaleY = scale
+        }
+        .clickable(
+            interactionSource = interactionSource,
+            indication = ripple(color = rippleColor),
+            onClick = onClick
+        )
 }
