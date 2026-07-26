@@ -1472,7 +1472,7 @@ private fun StatsModeContent(
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Intercept (b):"); Text(f(r.intercept)) }
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Correlation (r):"); Text(f(r.r)) }
                 Spacer(Modifier.height(8.dp))
-                Text("y = ${f(r.slope)}x + ${if(r.intercept >= 0) "+" else ""}${f(r.intercept)}", fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.CenterHorizontally))
+                Text("y = ${f(r.slope)}x ${if (r.intercept >= 0) "+" else "-"} ${f(kotlin.math.abs(r.intercept))}", fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.CenterHorizontally))
             }
         }
     }
