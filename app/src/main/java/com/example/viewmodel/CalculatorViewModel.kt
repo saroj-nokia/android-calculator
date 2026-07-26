@@ -15,7 +15,7 @@ import kotlinx.coroutines.delay
 import java.text.DecimalFormat
 import kotlin.math.abs
 
-enum class CalculatorMode { NORMAL, FUNCTION, COMPLEX, MATRIX }
+enum class CalculatorMode { NORMAL, FUNCTION, COMPLEX, MATRIX, STATS }
 
 data class HistoryItem(
     val id: Long,
@@ -106,7 +106,36 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
     private val _matrixResult = MutableStateFlow<MatrixResult>(MatrixResult.Empty)
     val matrixResult: StateFlow<MatrixResult> = _matrixResult
 
-    private val _focusedField = MutableStateFlow(0)
+    
+    enum class StatsSubMode { DESCRIPTIVE, REGRESSION }
+    private val _statsSubMode = MutableStateFlow(StatsSubMode.DESCRIPTIVE)
+    val statsSubMode: StateFlow<StatsSubMode> = _statsSubMode
+
+    private val _statsDataset = MutableStateFlow<List<String>>(emptyList())
+    val statsDataset: StateFlow<List<String>> = _statsDataset
+
+    private val _statsDatasetX = MutableStateFlow<List<String>>(emptyList())
+    val statsDatasetX: StateFlow<List<String>> = _statsDatasetX
+
+    private val _statsDatasetY = MutableStateFlow<List<String>>(emptyList())
+    val statsDatasetY: StateFlow<List<String>> = _statsDatasetY
+
+    private val _statsInputBuffer = MutableStateFlow("")
+    val statsInputBuffer: StateFlow<String> = _statsInputBuffer
+
+    private val _statsRegressionFocus = MutableStateFlow('X') // 'X' or 'Y'
+    val statsRegressionFocus: StateFlow<Char> = _statsRegressionFocus
+
+    private val _statsResult = MutableStateFlow<com.example.util.StatsResult?>(null)
+    val statsResult: StateFlow<com.example.util.StatsResult?> = _statsResult
+
+    private val _regressionResult = MutableStateFlow<com.example.util.RegressionResult?>(null)
+    val regressionResult: StateFlow<com.example.util.RegressionResult?> = _regressionResult
+
+    private val _statsError = MutableStateFlow<String?>(null)
+    val statsError: StateFlow<String?> = _statsError
+
+private val _focusedField = MutableStateFlow(0)
     val focusedField: StateFlow<Int> = _focusedField
 
     private var liveEvalJob: Job? = null
@@ -128,7 +157,11 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
 
     fun onKeyPress(key: String) {
         when (_mode.value) {
-            CalculatorMode.MATRIX -> {
+                        CalculatorMode.STATS -> {
+                handleStatsKeyPress(key)
+                return
+            }
+CalculatorMode.MATRIX -> {
                 handleMatrixKeyPress(key)
                 return
             }
@@ -786,6 +819,137 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
             _matrixResult.value = MatrixResult.MatrixGrid(res)
         } catch (e: Exception) {
             _matrixResult.value = MatrixResult.Error("Singular")
+        }
+    }
+
+    fun setStatsSubMode(mode: StatsSubMode) {
+        _statsSubMode.value = mode
+        clearStatsResults()
+    }
+
+    fun setStatsRegressionFocus(focus: Char) {
+        _statsRegressionFocus.value = focus
+    }
+
+    fun addStatsEntry() {
+        val value = _statsInputBuffer.value
+        if (value.isNotEmpty() && value != "-" && value != ".") {
+            if (_statsSubMode.value == StatsSubMode.DESCRIPTIVE) {
+                _statsDataset.value = _statsDataset.value + value
+            } else {
+                if (_statsRegressionFocus.value == 'X') {
+                    _statsDatasetX.value = _statsDatasetX.value + value
+                } else {
+                    _statsDatasetY.value = _statsDatasetY.value + value
+                }
+            }
+            _statsInputBuffer.value = ""
+            clearStatsResults()
+        }
+    }
+
+    fun removeStatsEntry(index: Int) {
+        val newList = _statsDataset.value.toMutableList()
+        if (index in newList.indices) {
+            newList.removeAt(index)
+            _statsDataset.value = newList
+            clearStatsResults()
+        }
+    }
+
+    fun removeStatsEntryX(index: Int) {
+        val newList = _statsDatasetX.value.toMutableList()
+        if (index in newList.indices) {
+            newList.removeAt(index)
+            _statsDatasetX.value = newList
+            clearStatsResults()
+        }
+    }
+
+    fun removeStatsEntryY(index: Int) {
+        val newList = _statsDatasetY.value.toMutableList()
+        if (index in newList.indices) {
+            newList.removeAt(index)
+            _statsDatasetY.value = newList
+            clearStatsResults()
+        }
+    }
+
+    fun clearStatsData() {
+        _statsDataset.value = emptyList()
+        _statsDatasetX.value = emptyList()
+        _statsDatasetY.value = emptyList()
+        _statsInputBuffer.value = ""
+        clearStatsResults()
+    }
+
+    private fun clearStatsResults() {
+        _statsResult.value = null
+        _regressionResult.value = null
+        _statsError.value = null
+    }
+
+    private fun handleStatsKeyPress(key: String) {
+        val current = _statsInputBuffer.value
+        when (key) {
+            "AC" -> {
+                _statsInputBuffer.value = ""
+            }
+            "DEL" -> {
+                if (current.isNotEmpty()) {
+                    _statsInputBuffer.value = current.dropLast(1)
+                }
+            }
+            "=" -> {
+                if (_statsSubMode.value == StatsSubMode.DESCRIPTIVE) {
+                    evaluateDescriptiveStats()
+                } else {
+                    evaluateRegression()
+                }
+            }
+            "+", "-", "×", "÷", "*", "/" -> {
+                if (key == "-") {
+                    if (current.isEmpty()) {
+                        _statsInputBuffer.value = "-"
+                    } else if (current == "-") {
+                        _statsInputBuffer.value = ""
+                    } else if (!current.startsWith("-")) {
+                        _statsInputBuffer.value = "-$current"
+                    }
+                }
+            }
+            else -> {
+                if (key == ".") {
+                    if (!current.contains(".")) {
+                        _statsInputBuffer.value = if (current.isEmpty() || current == "-") current + "0." else current + "."
+                    }
+                } else {
+                    _statsInputBuffer.value = current + key
+                }
+            }
+        }
+    }
+
+    fun evaluateDescriptiveStats() {
+        try {
+            val doubles = _statsDataset.value.map { it.toDouble() }
+            val res = com.example.util.StatisticsEvaluator.descriptiveStats(doubles)
+            _statsResult.value = res
+            _statsError.value = null
+        } catch (e: Exception) {
+            _statsError.value = e.message ?: "Error"
+        }
+    }
+
+    fun evaluateRegression() {
+        try {
+            val xs = _statsDatasetX.value.map { it.toDouble() }
+            val ys = _statsDatasetY.value.map { it.toDouble() }
+            val res = com.example.util.StatisticsEvaluator.linearRegression(xs, ys)
+            _regressionResult.value = res
+            _statsError.value = null
+        } catch (e: Exception) {
+            _statsError.value = e.message ?: "Error"
         }
     }
 }

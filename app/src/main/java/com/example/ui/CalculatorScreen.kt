@@ -38,6 +38,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -53,6 +54,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -271,7 +274,29 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                                 fontWeight = FontWeight.Bold
                             )
                         }
+                        
+                        Spacer(modifier = Modifier.width(10.dp))
 
+                        // Stats Mode toggle
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(if (mode == CalculatorMode.STATS) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant)
+                                .clickable {
+                                    viewModel.setMode(CalculatorMode.STATS)
+                                }
+                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                                .testTag("stats_mode_toggle"),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "Σ",
+                                color = if (mode == CalculatorMode.STATS) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        
                         Spacer(modifier = Modifier.width(10.dp))
 
                         // Advanced Scientific Notation / Functions mode trigger
@@ -364,6 +389,36 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                                 onSetSize = { viewModel.setMatrixSize(it) },
                                 onFocusCell = { m, r, c -> viewModel.setFocusedMatrixCell(m, r, c) },
                                 onSetOperator = { viewModel.setMatrixOperator(it) }
+                            )
+                        }
+                        
+                        CalculatorMode.STATS -> {
+                            val statsSubMode by viewModel.statsSubMode.collectAsStateWithLifecycle()
+                            val statsDataset by viewModel.statsDataset.collectAsStateWithLifecycle()
+                            val statsDatasetX by viewModel.statsDatasetX.collectAsStateWithLifecycle()
+                            val statsDatasetY by viewModel.statsDatasetY.collectAsStateWithLifecycle()
+                            val statsInputBuffer by viewModel.statsInputBuffer.collectAsStateWithLifecycle()
+                            val statsRegressionFocus by viewModel.statsRegressionFocus.collectAsStateWithLifecycle()
+                            val statsResult by viewModel.statsResult.collectAsStateWithLifecycle()
+                            val regressionResult by viewModel.regressionResult.collectAsStateWithLifecycle()
+                            val statsError by viewModel.statsError.collectAsStateWithLifecycle()
+
+                            StatsModeContent(
+                                subMode = statsSubMode,
+                                dataset = statsDataset,
+                                datasetX = statsDatasetX,
+                                datasetY = statsDatasetY,
+                                inputBuffer = statsInputBuffer,
+                                regressionFocus = statsRegressionFocus,
+                                statsResult = statsResult,
+                                regressionResult = regressionResult,
+                                statsError = statsError,
+                                onSetSubMode = { viewModel.setStatsSubMode(it) },
+                                onSetRegressionFocus = { viewModel.setStatsRegressionFocus(it) },
+                                onAddEntry = { viewModel.addStatsEntry() },
+                                onRemoveEntry = { viewModel.removeStatsEntry(it) },
+                                onRemoveEntryX = { viewModel.removeStatsEntryX(it) },
+                                onRemoveEntryY = { viewModel.removeStatsEntryY(it) }
                             )
                         }
                     }
@@ -508,6 +563,31 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                             }
                             CalculatorKeyButton("|z|", "key_eval_mod", modifier = Modifier.weight(1f), isSci = true) { viewModel.evaluateModulus() }
                             CalculatorKeyButton("z̄", "key_eval_conj", modifier = Modifier.weight(1f), isSci = true) { viewModel.evaluateConjugate() }
+                        }
+                    }
+
+                    // Stats Mode Action Buttons
+                    AnimatedVisibility(
+                        visible = mode == CalculatorMode.STATS,
+                        enter = expandVertically(animationSpec = tween(250)) + fadeIn(),
+                        exit = shrinkVertically(animationSpec = tween(220)) + fadeOut()
+                    ) {
+                        val subMode by viewModel.statsSubMode.collectAsStateWithLifecycle()
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            CalculatorKeyButton("Clear Data", "key_stats_clear", modifier = Modifier.weight(1f), isSci = true) { viewModel.clearStatsData() }
+                            Spacer(Modifier.width(12.dp))
+                            CalculatorKeyButton("Calculate", "key_stats_calc", modifier = Modifier.weight(1f), isSci = true) { 
+                                if (subMode == com.example.viewmodel.CalculatorViewModel.StatsSubMode.DESCRIPTIVE) {
+                                    viewModel.evaluateDescriptiveStats()
+                                } else {
+                                    viewModel.evaluateRegression()
+                                }
+                            }
                         }
                     }
 
@@ -1211,6 +1291,188 @@ fun MatrixInputGrid(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun StatsModeContent(
+    subMode: com.example.viewmodel.CalculatorViewModel.StatsSubMode,
+    dataset: List<String>,
+    datasetX: List<String>,
+    datasetY: List<String>,
+    inputBuffer: String,
+    regressionFocus: Char,
+    statsResult: com.example.util.StatsResult?,
+    regressionResult: com.example.util.RegressionResult?,
+    statsError: String?,
+    onSetSubMode: (com.example.viewmodel.CalculatorViewModel.StatsSubMode) -> Unit,
+    onSetRegressionFocus: (Char) -> Unit,
+    onAddEntry: () -> Unit,
+    onRemoveEntry: (Int) -> Unit,
+    onRemoveEntryX: (Int) -> Unit,
+    onRemoveEntryY: (Int) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(bottom = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Sub-mode selector
+        Row(
+            modifier = Modifier
+                .wrapContentWidth()
+                .clip(RoundedCornerShape(20.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            val modes = listOf(
+                com.example.viewmodel.CalculatorViewModel.StatsSubMode.DESCRIPTIVE to "Descriptive",
+                com.example.viewmodel.CalculatorViewModel.StatsSubMode.REGRESSION to "Regression"
+            )
+            modes.forEach { (m, label) ->
+                val isSelected = subMode == m
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
+                        .clickable { onSetSubMode(m) }
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = label,
+                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+        
+        Spacer(Modifier.height(16.dp))
+        
+        // Input buffer area
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .padding(12.dp)
+            ) {
+                Text(
+                    text = inputBuffer.ifEmpty { "Enter value..." },
+                    color = if (inputBuffer.isEmpty()) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface,
+                    fontSize = 18.sp
+                )
+            }
+            Spacer(Modifier.width(8.dp))
+            Button(onClick = onAddEntry) {
+                Text("Add")
+            }
+        }
+        
+        Spacer(Modifier.height(16.dp))
+        
+        // Lists
+        if (subMode == com.example.viewmodel.CalculatorViewModel.StatsSubMode.DESCRIPTIVE) {
+            LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp)) {
+                itemsIndexed(dataset) { index, item ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("${index + 1}: $item", fontSize = 16.sp)
+                        IconButton(onClick = { onRemoveEntry(index) }) {
+                            Text("×", fontSize = 20.sp, color = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                    if (index < dataset.lastIndex) {
+                        androidx.compose.material3.Divider()
+                    }
+                }
+            }
+        } else {
+            Row(modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp)) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("X", fontWeight = FontWeight.Bold, color = if (regressionFocus == 'X') MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface, modifier = Modifier.clickable { onSetRegressionFocus('X') }.fillMaxWidth().padding(8.dp))
+                    LazyColumn {
+                        itemsIndexed(datasetX) { index, item ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("$item", fontSize = 16.sp)
+                                IconButton(onClick = { onRemoveEntryX(index) }) {
+                                    Text("×", color = MaterialTheme.colorScheme.error)
+                                }
+                            }
+                        }
+                    }
+                }
+                Spacer(Modifier.width(8.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Y", fontWeight = FontWeight.Bold, color = if (regressionFocus == 'Y') MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface, modifier = Modifier.clickable { onSetRegressionFocus('Y') }.fillMaxWidth().padding(8.dp))
+                    LazyColumn {
+                        itemsIndexed(datasetY) { index, item ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("$item", fontSize = 16.sp)
+                                IconButton(onClick = { onRemoveEntryY(index) }) {
+                                    Text("×", color = MaterialTheme.colorScheme.error)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        Spacer(Modifier.height(8.dp))
+        
+        // Results
+        if (statsError != null) {
+            Text(statsError, color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+        } else if (subMode == com.example.viewmodel.CalculatorViewModel.StatsSubMode.DESCRIPTIVE && statsResult != null) {
+            val scrollState = rememberScrollState()
+            Column(modifier = Modifier.fillMaxWidth().verticalScroll(scrollState).padding(16.dp)) {
+                val r = statsResult
+                val f = { v: Double -> com.example.util.Matrix.formatMatrixValue(v) }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Count:"); Text(r.count.toString()) }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Sum:"); Text(f(r.sum)) }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Mean:"); Text(f(r.mean)) }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Median:"); Text(f(r.median)) }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Mode:"); Text(f(r.mode)) }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Min:"); Text(f(r.min)) }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Max:"); Text(f(r.max)) }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Var (S):"); Text(f(r.sampleVariance)) }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Var (P):"); Text(f(r.populationVariance)) }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("SD (S):"); Text(f(r.sampleStdDev)) }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("SD (P):"); Text(f(r.populationStdDev)) }
+            }
+        } else if (subMode == com.example.viewmodel.CalculatorViewModel.StatsSubMode.REGRESSION && regressionResult != null) {
+            Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                val r = regressionResult
+                val f = { v: Double -> com.example.util.Matrix.formatMatrixValue(v) }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Slope (m):"); Text(f(r.slope)) }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Intercept (b):"); Text(f(r.intercept)) }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Correlation (r):"); Text(f(r.r)) }
+                Spacer(Modifier.height(8.dp))
+                Text("y = ${f(r.slope)}x + ${if(r.intercept >= 0) "+" else ""}${f(r.intercept)}", fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.CenterHorizontally))
             }
         }
     }
