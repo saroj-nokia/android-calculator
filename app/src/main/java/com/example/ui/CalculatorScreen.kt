@@ -174,10 +174,10 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                     Row(
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
                             .pressScaledClickable(backgroundColor = MaterialTheme.colorScheme.surfaceVariant) {
                                 showHistoryDialog = !showHistoryDialog
                             }
+                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
                             .padding(horizontal = 12.dp, vertical = 6.dp)
                             .testTag("history_button"),
                         verticalAlignment = Alignment.CenterVertically
@@ -208,10 +208,10 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
                                 .pressScaledClickable(backgroundColor = MaterialTheme.colorScheme.surfaceVariant) {
                                     viewModel.toggleDegrees()
                                 }
+                                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
                                 .padding(horizontal = 12.dp, vertical = 6.dp)
                                 .testTag("deg_rad_toggle"),
                             contentAlignment = Alignment.Center
@@ -232,8 +232,8 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                             Row(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(12.dp))
-                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
                                     .pressScaledClickable(backgroundColor = MaterialTheme.colorScheme.surfaceVariant) { modeMenuExpanded = true }
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
                                     .padding(horizontal = 12.dp, vertical = 6.dp)
                                     .testTag("mode_selector_button"),
                                 verticalAlignment = Alignment.CenterVertically
@@ -298,10 +298,10 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(12.dp))
-                                    .background(if (isAdvancedMode) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant)
                                     .pressScaledClickable(backgroundColor = if (isAdvancedMode) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surfaceVariant) {
                                         viewModel.toggleAdvancedMode()
                                     }
+                                    .background(if (isAdvancedMode) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
                                     .padding(horizontal = 12.dp, vertical = 6.dp)
                                     .testTag("advanced_mode_toggle"),
                                 contentAlignment = Alignment.Center
@@ -574,8 +574,8 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                                         modifier = Modifier
                                             .weight(1f)
                                             .clip(RoundedCornerShape(24.dp))
-                                            .background(if (op == o) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent)
                                             .pressScaledClickable(backgroundColor = if (op == o) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant) { viewModel.setComplexOperator(o) }
+                                            .background(if (op == o) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent, RoundedCornerShape(24.dp))
                                             .padding(vertical = 12.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
@@ -738,10 +738,10 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(14.dp))
-                                    .background(MaterialTheme.colorScheme.secondaryContainer)
                                     .pressScaledClickable(backgroundColor = MaterialTheme.colorScheme.secondaryContainer) {
                                         showHistoryDialog = false
                                     }
+                                    .background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(14.dp))
                                     .padding(vertical = 14.dp),
                                 contentAlignment = Alignment.Center
                             ) {
@@ -801,12 +801,12 @@ fun CalculatorKeyButton(
         modifier = modifier
             .height(58.dp)
             .clip(RoundedCornerShape(28.dp))
-            .background(buttonBk)
-            .then(borderModifier)
             .pressScaledClickable(backgroundColor = buttonBk) {
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 onClick()
             }
+            .background(buttonBk, RoundedCornerShape(28.dp))
+            .then(borderModifier)
             .testTag(tag),
         contentAlignment = Alignment.Center
     ) {
@@ -862,8 +862,8 @@ fun HistoryRowItem(item: HistoryItem, onSelect: () -> Unit, onDelete: () -> Unit
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
                 .pressScaledClickable(backgroundColor = MaterialTheme.colorScheme.surface) { onSelect() }
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
                 .padding(16.dp),
             horizontalAlignment = Alignment.End
         ) {
@@ -1152,8 +1152,8 @@ private fun MatrixModeContent(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(16.dp))
-                        .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
                         .pressScaledClickable(backgroundColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant) { onSetSize(size) }
+                        .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent, RoundedCornerShape(16.dp))
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -1183,8 +1183,8 @@ private fun MatrixModeContent(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(16.dp))
-                        .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
                         .pressScaledClickable(backgroundColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant) { onSetOperator(op) }
+                        .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent, RoundedCornerShape(16.dp))
                         .padding(horizontal = 24.dp, vertical = 8.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -1312,8 +1312,8 @@ fun MatrixInputGrid(
                                 .padding(2.dp)
                                 .size(if (size == 4) 36.dp else 48.dp)
                                 .clip(RoundedCornerShape(4.dp))
-                                .background(bgColor)
                                 .pressScaledClickable(backgroundColor = bgColor) { onFocusCell(matrixId, i, j) }
+                                .background(bgColor, RoundedCornerShape(4.dp))
                                 .border(if (isFocused) 2.dp else 1.dp, if (isFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(4.dp)),
                             contentAlignment = Alignment.Center
                         ) {
@@ -1376,8 +1376,8 @@ private fun StatsModeContent(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(16.dp))
-                        .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
                         .pressScaledClickable(backgroundColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant) { onSetSubMode(m) }
+                        .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent, RoundedCornerShape(16.dp))
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     contentAlignment = Alignment.Center
                 ) {
