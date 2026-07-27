@@ -1533,6 +1533,8 @@ fun Modifier.pressScaledClickable(
         androidx.compose.ui.graphics.Color.White.copy(alpha = 0.25f)
     }
     
+    val indication = androidx.compose.runtime.remember(rippleColor) { ripple(color = rippleColor) }
+    
     return this
         .graphicsLayer {
             scaleX = scale
@@ -1540,7 +1542,7 @@ fun Modifier.pressScaledClickable(
         }
         .clickable(
             interactionSource = interactionSource,
-            indication = ripple(color = rippleColor),
+            indication = indication,
             onClick = onClick
         )
 }
